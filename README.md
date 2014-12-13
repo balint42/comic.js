@@ -30,11 +30,11 @@ stuff = paper.group();
 ```
 and then
 ```
-stuff.cLine(x1, y1, x2, y2)         // starting point to end point
-    .cTrian(x1, y1, x2, y2, x3, y3) // three corner points
-    .cRect(x1, y1, width, height)   // upper left point and width & height
-    .cCircle(x1, y1, r)             // center point and radius
-    .cEllipse(x1, y1, r1, r2)       // center point and two radiuses
+stuff.cLine(x1, y1, x2, y2)         // LINE from starting point to end point
+    .cTrian(x1, y1, x2, y2, x3, y3) // TRIANGLE over three corner points
+    .cRect(x1, y1, width, height)   // RECTANGLE at upper left point with width & height
+    .cCircle(x1, y1, r)             // CIRCLE at center point with radius
+    .cEllipse(x1, y1, r1, r2)       // ELLIPSE at center point with two radiuses
     ;
 stuff.attr({
     "stroke":"#E0AE9F",
@@ -45,5 +45,7 @@ stuff.attr({
 All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. Examples with all three libraries can be found here:
 
 [Raphael.js](http://www.morvai.de/comicjs/index1.html)
+
 [D3.js](http://www.morvai.de/comicjs/index2.html)
+
 [SVG.js](http://www.morvai.de/comicjs/index3.html)
