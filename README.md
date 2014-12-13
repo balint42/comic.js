@@ -3,9 +3,13 @@ comic.js
 
 Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) and provides functions for cartoon style SVG drawing. Currently it supports only SVG (no canvas), but if someone needs canvas support I might implement it (let me know).
 
-Credits:
-Inspired by and based on [Jonas Wagner's work](http://29a.ch/2010/2/10/hand-drawn-lines-algorithm-javascript-canvas-html5)
-which is based on this [paper](http://iwi.eldoc.ub.rug.nl/FILES/root/2008/ProcCAGVIMeraj/2008ProcCAGVIMeraj.pdf)
+![screenshot](doc/screenshot.png)
+
+Examples
+--------
+[Raphael.js](http://www.morvai.de/comicjs/index1.html)
+[D3.js](http://www.morvai.de/comicjs/index2.html)
+[SVG.js](http://www.morvai.de/comicjs/index3.html)
 
 Usage
 -----
@@ -42,10 +46,9 @@ stuff.attr({
 });
 ```
 
-All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. Examples with all three libraries can be found here:
+All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. 
 
-[Raphael.js](http://www.morvai.de/comicjs/index1.html)
-
-[D3.js](http://www.morvai.de/comicjs/index2.html)
-
-[SVG.js](http://www.morvai.de/comicjs/index3.html)
+Credits
+-------
+Inspired by and based on [Jonas Wagner's work](http://29a.ch/2010/2/10/hand-drawn-lines-algorithm-javascript-canvas-html5)
+which is based on this [paper](http://iwi.eldoc.ub.rug.nl/FILES/root/2008/ProcCAGVIMeraj/2008ProcCAGVIMeraj.pdf)
