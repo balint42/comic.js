@@ -2,7 +2,7 @@ comic.js
 =======
 
 Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
-Thus the current version support canvas drawing too!
+Thus the current version supports canvas drawing too!
 
 ![screenshot](doc/screenshot.png)
 
