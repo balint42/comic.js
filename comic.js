@@ -328,7 +328,7 @@ var bindTo = function(lib, pathFn) {
     }
     // if no 2d canvas context given, but "path" method given
     var svgPath = function(x0, y0, cx, cy, x1, y1) {
-        path.call(this,
+        pathFn.call(this,
             ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
         );
     }
