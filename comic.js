@@ -4,8 +4,12 @@
  * Comic style version of common drawing functions, that is
  * implemented as library agnostic JS extension. Only assuming
  * that given "lib" can be extended the JS way (setting properties)
- * and that "path" is a drawing method which understands standard
- * SVG path format strings.
+ * and that if a "path" method is given, it is a drawing method
+ * which understands standard SVG path format strings.
+ * If no "path" is given, it will check if "lib" is a 2d canvas context
+ * and use context drawing functions. If "lib" is not a 2d canvas
+ * context, as last guess it will try to call an SVG "path" method
+ * directly on the "lib" object.
  * 
  * Credits:
  * Inspired by and based on Jonas Wagner's work
@@ -16,33 +20,88 @@
  * @author Balint Morvai <balint@morvai.de>
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
+// global object
+COMIC = { version: 0.8 };
+
 (function() {
 /**
+ * @var object global "C" object
+ */
+var C = COMIC;
+/**
+ * @var int length of one step - each step means new "hand jitter"
+ */
+var fsteps = 50;
+/**
+ * @var int min number of steps
+ */
+var msteps = 4;
+/**
+ * @var float fuzzyness factor
+ */
+var ff = 8.0;
+/**
+ * @var float fuzzyness factor for circle & ellipse
+ */
+var ffc = ff / 75;
+/**
+ * @var object 2d canvas context (if any)
+ */
+var context = undefined;
+/**
+ * @var function code to execute when finished drawing a shape
+ */
+var finished = function() {};
+/**
+ * @var bool whether begun drawing a shape
+ */
+var begun = false;
+
+/**
+ * Public function to allow user defined options, also
+ * setting a 2d canvas context for drawing.
+ *
+ * @param options object with options
+ * @return C object
+ */
+C.init = function(options) {
+    // no need to deep copy & no need to drop unknown options
+    for(var prop in options) { 
+        if(options.hasOwnProperty(prop)) {
+            C[prop] = options[prop]; 
+        }
+    }
+    
+    if(typeof options["context"] == "object") {
+        bindTo(C.context);
+    }
+    
+    return C;
+}
+
+/**
+ * Public function to init drawing functions on the given
+ * 2d canvas context.
+ *
+ * @param context 2d canvas context
+ * @return C object
+ */
+C.ctx = function(context) {
+    C.init({ "context": context });
+    
+    return C;
+}
+
+/**
  * Binds comic drawing functions to the given library using the
- * given method to draw svg paths.
+ * given method to draw svg paths. If no method is given (2nd param),
+ * it tries to call "path" directly on lib.
  *
  * @param lib root object to hook in to
- * @param path method to draw svg paths
+ * @param path method to draw svg paths (optional)
  * @return void
  */
-var bindTo = function(lib, path) {
-    /**
-     * @var int for each amount of below units make one step
-     */
-    var unitsPerStep = 50;
-    /**
-     * @var int min number of steps
-     */
-    var minSteps = 4;
-    /**
-     * @var float fuzzyness factor
-     */
-    var ff = 8.0;
-    /**
-     * @var float fuzzyness factor for circle & ellipse
-     */
-    var ffc = ff / 75;
-    
+var bindTo = function(lib, pathFn) {
     /**
      * hand draw an ellipse
      * 
@@ -56,8 +115,8 @@ var bindTo = function(lib, path) {
         // number of steps
         var steps = Math.ceil(Math.pow(rh * rv, 0.25) * 3);
         // fuzzyness dependent on radius
-        var fh = ffc * rh;
-        var fv = ffc * rv;
+        var fh = C.ffc * rh;
+        var fv = C.ffc * rv;
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
         var ys = 0.95 + Math.random() * 0.1;
@@ -78,11 +137,10 @@ var bindTo = function(lib, path) {
             var x1 = x + Math.cos(t1) * rxs;
             var y1 = y + Math.sin(t1) * rys;
 
-            path.call(this,
-                ["M", x0, y0, "Q", fuzz(x0, fh), fuzz(y0, fv), x1, y1].join(" ")
-            );
+            path.call(this, x0, y0, fuzz(x0, fh), fuzz(y0, fv), x1, y1);
         }
         
+        finished.call(this);
         return this;
     }
     
@@ -98,7 +156,7 @@ var bindTo = function(lib, path) {
         // number of steps
         var steps = Math.ceil(Math.sqrt(r) * 3);
         // fuzzyness dependent on radius
-        var f = ffc * r;
+        var f = C.ffc * r;
         // distortion of the circle
         var xs = 0.95 + Math.random() * 0.1;
         var rxs = r * xs;
@@ -118,11 +176,10 @@ var bindTo = function(lib, path) {
             x1 = x + Math.cos(t1) * rxs;
             y1 = y + Math.sin(t1) * rys;
 
-            path.call(this,
-                ["M", x0, y0, "Q", fuzz(x0, f), fuzz(y0, f), x1, y1].join(" ")
-            );
+            path.call(this, x0, y0, fuzz(x0, f), fuzz(y0, f), x1, y1);
         }
         
+        finished.call(this);
         return this;
     }
 
@@ -138,10 +195,11 @@ var bindTo = function(lib, path) {
      * @return native library object
      */
     lib.cTrian = function(x0, y0, x1, y1, x2, y2) {
-        lib.cLine.call(this, x0, y0, x1, y1);
-        lib.cLine.call(this, x1, y1, x2, y2);
-        lib.cLine.call(this, x2, y2, x0, y0);
+        cLine.call(this, x0, y0, x1, y1);
+        cLine.call(this, x1, y1, x2, y2);
+        cLine.call(this, x2, y2, x0, y0);
         
+        finished.call(this);
         return this;
     }
 
@@ -157,15 +215,17 @@ var bindTo = function(lib, path) {
     lib.cRect = function(x0, y0, width, height) {
         var x1 = x0 + width;
         var y1 = y0 + height;
-        lib.cLine.call(this, x0, y0, x1, y0);
-        lib.cLine.call(this, x1, y0, x1, y1);
-        lib.cLine.call(this, x1, y1, x0, y1);
-        lib.cLine.call(this, x0, y1, x0, y0);
+        cLine.call(this, x0, y0, x1, y0);
+        cLine.call(this, x1, y0, x1, y1);
+        cLine.call(this, x1, y1, x0, y1);
+        cLine.call(this, x0, y1, x0, y0);
         
+        finished.call(this);
         return this;
     }
     
     /**
+     * WRAPPER for real, interal "cLine"
      * Draw a comic style / hand drawn line
      * 
      * @param x0 x start
@@ -175,6 +235,23 @@ var bindTo = function(lib, path) {
      * @return native library object
      */
     lib.cLine = function(x0, y0, x1, y1) {
+        cLine.call(this, x0, y0, x1, y1);
+        
+        finished.call(this);
+        return this;
+    }
+    
+    /**
+     * INTERNAL version that does not call "finished"
+     * Draw a comic style / hand drawn line
+     * 
+     * @param x0 x start
+     * @param y0 y start
+     * @param x1 x end
+     * @param y1 y end
+     * @return native library object
+     */
+    var cLine = function(x0, y0, x1, y1) {
         /**
          * Estimate the movement of the arm
          * Reuses 3rd param from last call if omitted
@@ -184,6 +261,7 @@ var bindTo = function(lib, path) {
          * @param t step from 0 to 1
          * @return number
          */
+        this.moveTo(x0, y0);
         var ft; // store this outside function to preserve
         var handMovement = function(x0, x1, t) {
             // calculate ft or use old value if no "t" given
@@ -203,9 +281,9 @@ var bindTo = function(lib, path) {
         var dx = x1 - x0;
         var dy = y1 - y0;
         var d = Math.sqrt(dx * dx + dy * dy);
-        var steps = d / unitsPerStep;
-        if(steps < minSteps) {
-            steps = minSteps;
+        var steps = d / C.fsteps;
+        if(steps < C.msteps) {
+            steps = C.msteps;
         }
         // draw line step by step using quadratic Bézier path
         var xt1 = handMovement(x0, x1, 0); // bezier control point
@@ -216,9 +294,8 @@ var bindTo = function(lib, path) {
             var yt0 = yt1; // bezier control point
             var xt1 = handMovement(x0, x1, t1); // bezier end point
             var yt1 = handMovement(y0, y1); // bezier end point (reuse t1)
-            path.call(this,
-                ["M", xt0, yt0, "Q", fuzz(xt0, ff), fuzz(yt0, ff), xt1, yt1].join(' ')
-            );
+            
+            path.call(this, xt0, yt0, fuzz(xt0, C.ff), fuzz(yt0, C.ff), xt1, yt1);
         }
         
         return this;
@@ -234,19 +311,53 @@ var bindTo = function(lib, path) {
         return val + f * (Math.random() - 0.5);
     }
     
-    // -----------------------hack for SVG.JS---------------------------
+    // ----------------------set drawing method-------------------------
     // if no "path" method given, try calling "path" on "this"
-    var callPath = function(pathStr) {
-        this.path(pathStr)
+    var callPath = function(x0, y0, cx, cy, x1, y1) {
+        this.path(
+            ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
+        );
     }
-    path = (typeof path == "undefined") ?
-        callPath : path;
+    // if 2d canvas context given, use context method
+    var ctxPath = function(x0, y0, cx, cy, x1, y1) {
+        if(!begun) {
+            begun = true;
+            this.beginPath();
+        }
+        this.moveTo(x0, y0);
+        this.quadraticCurveTo(cx, cy, x1, y1);
+    }
+    // if no 2d canvas context given, but "path" method given
+    var svgPath = function(x0, y0, cx, cy, x1, y1) {
+        path.call(this,
+            ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
+        );
+    }
+    // set the right method
+    if(typeof C.context != "undefined") {
+        path = ctxPath;
+        finished = function() {
+            this.stroke();
+            begun = false;
+        };
+    }
+    else {
+        path = (typeof pathFn == "undefined") ? callPath : svgPath;
+    }
 }
 
+// set options
+C.init({ 
+    fsteps: fsteps,
+    msteps: msteps,
+    ff: ff,
+    ffc: ffc,
+    context: context
+});
 
 // Raphael.js
 if(typeof Raphael != "undefined") {
-    bindTo(Raphael.fn,          // root object to hook in to
+    bindTo(Raphael.fn,       // root object to hook in to
            Raphael.fn.path); // method to draw svg paths
 }
 
@@ -254,8 +365,8 @@ if(typeof Raphael != "undefined") {
 if(typeof SVG != "undefined") {
     var dummy = {};
     bindTo(dummy);
+    SVG.extend(SVG.Set, dummy);
     SVG.extend(SVG.Group, dummy);
-    bindTo(dummy);
     SVG.extend(SVG.Element, dummy);
 }
 
@@ -268,6 +379,5 @@ if(typeof d3 != "undefined") {
     bindTo(d3.selection.prototype, d3path);
     bindTo(d3.selection.enter.prototype, d3path);
 }
-
 
 })();
