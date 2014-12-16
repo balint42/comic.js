@@ -261,7 +261,6 @@ var bindTo = function(lib, pathFn) {
          * @param t step from 0 to 1
          * @return number
          */
-        this.moveTo(x0, y0);
         var ft; // store this outside function to preserve
         var handMovement = function(x0, x1, t) {
             // calculate ft or use old value if no "t" given
