@@ -15,7 +15,7 @@ Examples
 
 Usage
 -----
-Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` with id `paper`:
+Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper`:
 
 ```
 // Raphael.js
