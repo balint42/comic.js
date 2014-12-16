@@ -1,7 +1,7 @@
 comic.js
 =======
 
-Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the HTML5 Canvas, providing functions for cartoon style SVG drawing.
+Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
 Thus the current version support canvas drawing too!
 
 ![screenshot](doc/screenshot.png)
@@ -15,7 +15,7 @@ Examples
 
 Usage
 -----
-Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a HTML5 canvas. Then it can be used as follows, assuming that you have a container `div` with id `paper`:
+Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` with id `paper`:
 
 ```
 // Raphael.js
