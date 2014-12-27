@@ -1,6 +1,6 @@
 /**
  * @brief Comic style version of common drawing functions.
- * 
+ *
  * Comic style version of common drawing functions, that is
  * implemented as library agnostic JS extension. Only assuming
  * that given "lib" can be extended the JS way (setting properties)
@@ -10,7 +10,7 @@
  * and use context drawing functions. If "lib" is not a 2d canvas
  * context, as last guess it will try to call an SVG "path" method
  * directly on the "lib" object.
- * 
+ *
  * Credits:
  * Inspired by and based on Jonas Wagner's work
  * http://29a.ch/2010/2/10/hand-drawn-lines-algorithm-javascript-canvas-html5
@@ -43,7 +43,7 @@ var ff = 8.0;
 /**
  * @var float fuzzyness factor for circle & ellipse
  */
-var ffc = ff / 75;
+var ffc = ff / 20;
 /**
  * @var object 2d canvas context (if any)
  */
@@ -66,9 +66,9 @@ var begun = false;
  */
 C.init = function(options) {
     // no need to deep copy & no need to drop unknown options
-    for(var prop in options) { 
+    for(var prop in options) {
         if(options.hasOwnProperty(prop)) {
-            C[prop] = options[prop]; 
+            C[prop] = options[prop];
         }
     }
     
@@ -103,8 +103,92 @@ C.ctx = function(context) {
  */
 var bindTo = function(lib, pathFn) {
     /**
+     * hand draw a cubic Bezier curve
+     *
+     * @param x0 x starting point
+     * @param y0 y starting point
+     * @param cx0 x 1st control point
+     * @param cy0 y 1st control point
+     * @param cx1 x 2nd control point
+     * @param cy1 y 2nd control point
+     * @param x1 x end point
+     * @param y1 y end point
+     * @return native library object
+     */
+    lib.cBezier3 = function(x0, y0, cx0, cy0, cx1, cy1, x1, y1) {
+        // number of steps - this is a very primitive approach to
+        // estimate the Bezier arc length
+        var d = dist2(x0, x0, x1, y1) / 2;
+        var steps = Math.pow(Math.floor(d / C.fsteps), 1.4);
+        // fuzzyness
+        var f = C.ff * steps / 12;
+        
+        var p0 = [x0, y0];
+        var pc0 = [cx0, cy0];
+        var pc1 = [cx1, cy1];
+        var p1 = [x1, y1];
+        var curve2 = [p0, pc0, pc1, p1];
+        for(var i = steps; i > 0; i--) {
+            // split curve2
+            var points = bsplit(curve2, 1/i);
+            var curve1 = points[0];
+            var curve2 = points[1];
+            // set points for drawing from curve1
+            p0 = curve1[0]; pc0 = curve1[1];  pc1 = curve1[2]; p1 = curve1[3];
+            
+            path.call(this, p0[0], p0[1],
+                fuzz((pc0[0]+pc1[0])/2, f), // just make one control point
+                fuzz((pc0[1]+pc1[1])/2, f),
+                p1[0], p1[1]);
+            //lib.cCircle.call(this, p0[0], p0[1], 6 );
+        }
+        
+        finished.call(this);
+        return this;
+    }
+    
+    /**
+     * hand draw a quadratic Bezier curve
+     *
+     * @param x0 x starting point
+     * @param y0 y starting point
+     * @param cx x control point
+     * @param cy y control point
+     * @param x1 x end point
+     * @param y1 y end point
+     * @return native library object
+     */
+    lib.cBezier2 = function(x0, y0, cx, cy, x1, y1) {
+        // number of steps - this is a very primitive approach to
+        // estimate the Bezier arc length
+        var d = dist2(x0, x0, x1, y1) / 2;
+        var steps = Math.pow(Math.floor(d / C.fsteps), 1.4);
+        // fuzzyness
+        var f = C.ff * steps / 12;
+        
+        var p0 = [x0, y0];
+        var pc = [cx, cy];
+        var p1 = [x1, y1];
+        var curve2 = [p0, pc, p1];
+        for(var i = steps; i > 0; i--) {
+            // split curve2
+            var points = bsplit(curve2, 1/i);
+            var curve1 = points[0];
+            var curve2 = points[1];
+            // set points for drawing from curve1
+            p0 = curve1[0]; pc = curve1[1]; p1 = curve1[2];
+            
+            path.call(this, p0[0], p0[1], fuzz(pc[0], f), fuzz(pc[1], f), p1[0], p1[1]);
+            //lib.cCircle.call(this, p0[0], p0[1], 6 );
+        }
+        
+        finished.call(this);
+        return this;
+    }
+    
+    /**
      * hand draw an ellipse
-     * 
+     *
      * @param x x center
      * @param y y center
      * @param rh horizontal radius
@@ -115,8 +199,8 @@ var bindTo = function(lib, pathFn) {
         // number of steps
         var steps = Math.ceil(Math.pow(rh * rv, 0.25) * 3);
         // fuzzyness dependent on radius
-        var fh = C.ffc * rh;
-        var fv = C.ffc * rv;
+        var fh = C.ffc * Math.pow(rh * 3, 0.25);
+        var fv = C.ffc * Math.pow(rv * 3, 0.25);
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
         var ys = 0.95 + Math.random() * 0.1;
@@ -128,8 +212,7 @@ var bindTo = function(lib, pathFn) {
         var x1 = x + rxs; // initial values for i = 0
         var y1 = y;           // initial values for i = 0
         var t1 = 0; var t0, x0, y0;
-        for(var i = 1; i <= steps; i++)
-        {
+        for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
             var x0 = x1;
@@ -146,7 +229,7 @@ var bindTo = function(lib, pathFn) {
     
     /**
      * hand draw a circle
-     * 
+     *
      * @param x x center
      * @param y y center
      * @param r radius
@@ -155,8 +238,8 @@ var bindTo = function(lib, pathFn) {
     lib.cCircle = function(x, y, r) {
         // number of steps
         var steps = Math.ceil(Math.sqrt(r) * 3);
-        // fuzzyness dependent on radius
-        var f = C.ffc * r;
+        // fuzzyness dependent on steps (dependent on radius)
+        var f = C.ffc * Math.sqrt(steps);
         // distortion of the circle
         var xs = 0.95 + Math.random() * 0.1;
         var rxs = r * xs;
@@ -167,8 +250,7 @@ var bindTo = function(lib, pathFn) {
         var x1 = x + rxs; // initial values for i = 0
         var y1 = y;           // initial values for i = 0
         var t1 = 0; var t0, x0, y0;
-        for(var i = 1; i <= steps; i++)
-        {
+        for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
             x0 = x1;
@@ -185,7 +267,7 @@ var bindTo = function(lib, pathFn) {
 
     /**
      * Draw a triangle using line function
-     * 
+     *
      * @param x0 x first point
      * @param y0 y first point
      * @param x1 x second point
@@ -205,7 +287,7 @@ var bindTo = function(lib, pathFn) {
 
     /**
      * Draw a rectangle using line function
-     * 
+     *
      * @param x0 x upper left corcer
      * @param y0 y upper left corner
      * @param width width of the rectangle
@@ -227,7 +309,7 @@ var bindTo = function(lib, pathFn) {
     /**
      * WRAPPER for real, interal "cLine"
      * Draw a comic style / hand drawn line
-     * 
+     *
      * @param x0 x start
      * @param y0 y start
      * @param x1 x end
@@ -244,7 +326,7 @@ var bindTo = function(lib, pathFn) {
     /**
      * INTERNAL version that does not call "finished"
      * Draw a comic style / hand drawn line
-     * 
+     *
      * @param x0 x start
      * @param y0 y start
      * @param x1 x end
@@ -255,7 +337,7 @@ var bindTo = function(lib, pathFn) {
         /**
          * Estimate the movement of the arm
          * Reuses 3rd param from last call if omitted
-         * 
+         *
          * @param x0 x start
          * @param x1 x end
          * @param t step from 0 to 1
@@ -277,9 +359,7 @@ var bindTo = function(lib, pathFn) {
         }
         
         // calculate number of steps
-        var dx = x1 - x0;
-        var dy = y1 - y0;
-        var d = Math.sqrt(dx * dx + dy * dy);
+        var d = dist2(x0, y0, x1, y1);
         var steps = d / C.fsteps;
         if(steps < C.msteps) {
             steps = C.msteps;
@@ -301,6 +381,65 @@ var bindTo = function(lib, pathFn) {
     }
     
     /**
+     * @brief De Casteljau's algorithm splitting n-th degree Bezier curve
+     *
+     * Given n+1 control points for an n-th degree Bezier curve and
+     * a number t between 0 and 1, it will return two arrays, each
+     * with n+1 new control points. The returned control points define
+     * two Bezier curves that together form the original Bezier curve
+     * in two peaces, split at the t-th point.
+     *
+     * @author Balint Morvai <balint@morvai.de>
+     * @license http://en.wikipedia.org/wiki/MIT_License MIT License
+     */
+    var bsplit = function(points, t0) {
+            var n = points.length - 1; // number of control points
+            var b = [];                  // coefficients as in De Casteljau's algorithm
+            var res1 = [];           // first curve resulting control points
+            var res2 = [];           // second curve resulting control points
+            var t1 = 1 - t0;
+            
+            // multiply point with scalar factor
+            var pf = function(p, f) {
+                var res = [];
+                for(var i = 0; i < p.length; i++) {
+                    res.push(f * p[i]);
+                }
+                return res;
+            };
+            // add points as vectors
+            var pp = function(p1, p2) {
+                var res = [];
+                for(var i = 0; i < Math.min(p1.length, p2.length); i++) {
+                    res.push(p1[i] + p2[i]);
+                }
+                return res;
+            };
+            
+            // set original coefficients: b[i][0] = points[i]
+            for(var i = 0; i <= n; i++) {
+                points[i] = (typeof points[i] == "object") ? points[i] : [points[i]];
+                b.push([ points[i] ]);
+            }
+            // get all coefficients
+            for(var j = 1; j <= n; j++) {
+                for(var i = 0; i <= (n-j); i++) {
+                    b[i].push( pp(
+                            pf(b[i][j-1], t1),
+                            pf(b[i+1][j-1], t0)
+                    ));
+                }
+            }
+            // set result: res1 & res2
+            for(var j = 0; j <= n; j++) {
+                res1.push(b[0][j]);
+                res2.push(b[j][n-j]);
+            }
+            
+            return [res1, res2];
+        };
+    
+    /**
      * Shift given value randomly by fuzzyness factor f
      * @param val value to shift randomly
      * @param f fuzzyness factor
@@ -308,6 +447,20 @@ var bindTo = function(lib, pathFn) {
      */
     var fuzz = function(val, f) {
         return val + f * (Math.random() - 0.5);
+    }
+    
+    /**
+     * Distance between 2 numbers in 2 dim space
+     * @param x0 1st point x
+     * @param y0 1st point y
+     * @param x1 2nd point x
+     * @param y1 2nd point y
+     * @return number
+     */
+    var dist2 = function(x0, y0, x1, y1) {
+        var dx = x1 - x0;
+        var dy = y1 - y0;
+        return Math.sqrt(dx * dx + dy * dy);
     }
     
     // ----------------------set drawing method-------------------------
@@ -346,7 +499,7 @@ var bindTo = function(lib, pathFn) {
 }
 
 // set options
-C.init({ 
+C.init({
     fsteps: fsteps,
     msteps: msteps,
     ff: ff,
