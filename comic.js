@@ -118,10 +118,10 @@ var bindTo = function(lib, pathFn) {
     lib.cBezier3 = function(x0, y0, cx0, cy0, cx1, cy1, x1, y1) {
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
-        var d = dist2(x0, x0, x1, y1) / 2;
-        var steps = Math.pow(Math.floor(d / C.fsteps), 1.4);
+        var d = dist2(x0, y0, x1, y1) * 3;
+        var steps = Math.floor(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
-        var f = C.ff * steps / 12;
+        var f = C.ff * 0.8;
         
         var p0 = [x0, y0];
         var pc0 = [cx0, cy0];
@@ -161,10 +161,10 @@ var bindTo = function(lib, pathFn) {
     lib.cBezier2 = function(x0, y0, cx, cy, x1, y1) {
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
-        var d = dist2(x0, x0, x1, y1) / 2;
-        var steps = Math.pow(Math.floor(d / C.fsteps), 1.4);
+        var d = dist2(x0, y0, x1, y1) * 3;
+        var steps = Math.floor(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
-        var f = C.ff * steps / 12;
+        var f = C.ff * 0.8;
         
         var p0 = [x0, y0];
         var pc = [cx, cy];
@@ -185,40 +185,81 @@ var bindTo = function(lib, pathFn) {
         finished.call(this);
         return this;
     }
+
+    /**
+     * WRAPPER for real, private "cEllipse"
+     * Draw a comic style / hand drawn cEllipse
+     *
+     * @param x x center
+     * @param y y center
+     * @param rh horizontal radius
+     * @param rv vertical radius
+     * @param rot rotation in radians (< 2*PI)
+     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
+     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
+     * @return native library object
+     */
+    lib.cEllipse = function(x, y, rh, rv, rot, start, end) {
+        cEllipse.call(this, x, y, rh, rv, rot, start, end);
+        
+        finished.call(this);
+        return this;
+    }
     
     /**
+     * Private version that does not call "finished".
+     * Wrapped by "cEllipse" public that does call "finished".
      * hand draw an ellipse
      *
      * @param x x center
      * @param y y center
      * @param rh horizontal radius
      * @param rv vertical radius
+     * @param rot rotation in radians (< 2*PI)
+     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
+     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
      * @return native library object
      */
-    lib.cEllipse = function(x, y, rh, rv) {
+    var cEllipse = function(x, y, rh, rv, rot, start, end) {
+        var PI2 = Math.PI * 2;
+        // sanitize input
+        start = (typeof start == "undefined") ? 0 : Math.min(PI2-0.005*PI2, start);
+        end = (typeof end == "undefined") ? PI2 : Math.min(PI2, end);
+        rot = (typeof rot == "undefined") ? 0 : Math.min(PI2, rot);
+        // rotation
+        var cosRot = Math.cos(rot);
+        var sinRot = Math.sin(rot);
         // number of steps
         var steps = Math.ceil(Math.pow(rh * rv, 0.25) * 3);
         // fuzzyness dependent on radius
-        var fh = C.ffc * Math.pow(rh * 3, 0.25);
-        var fv = C.ffc * Math.pow(rv * 3, 0.25);
+        var fh = C.ffc * Math.pow(rh * 3, 0.5)
+                * Math.sqrt((rh < 25) ? 25 / rh : 1); // boost fuzz for small ellipses
+        var fv = C.ffc * Math.pow(rv * 3, 0.5) 
+                * Math.sqrt((rv < 25) ? 25 / rv : 1);
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
         var ys = 0.95 + Math.random() * 0.1;
         var rxs = rh * xs;
         var rys = rv * ys;
         // lenght of one segment
-        var segLength = Math.PI * 2 / steps;
+        var arcLength = end - start;
+        var segLength = arcLength / steps;
 
-        var x1 = x + rxs; // initial values for i = 0
-        var y1 = y;           // initial values for i = 0
-        var t1 = 0; var t0, x0, y0;
+        // initial values for i = 0
+        var t1 = start; var t0, x0, y0;
+        var cosT1rxs = rxs * Math.cos(t1);
+        var sinT1rys = rys * Math.sin(t1);
+        var x1 = x + cosT1rxs * cosRot - sinT1rys * sinRot;
+        var y1 = y + cosT1rxs * sinRot + sinT1rys * cosRot;
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
             var x0 = x1;
             var y0 = y1;
-            var x1 = x + Math.cos(t1) * rxs;
-            var y1 = y + Math.sin(t1) * rys;
+            var cosT1rxs = rxs * Math.cos(t1);
+            var sinT1rys = rys * Math.sin(t1);
+            var x1 = x + cosT1rxs * cosRot - sinT1rys * sinRot;
+            var y1 = y + cosT1rxs * sinRot + sinT1rys * cosRot;
 
             path.call(this, x0, y0, fuzz(x0, fh), fuzz(y0, fv), x1, y1);
         }
@@ -228,28 +269,56 @@ var bindTo = function(lib, pathFn) {
     }
     
     /**
+     * WRAPPER for real, private "cCircle"
+     * Draw a comic style / hand drawn circle
+     *
+     * @param x x center
+     * @param y y center
+     * @param r radius
+     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
+     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
+     * @return native library object
+     */
+    lib.cCircle = function(x, y, r, start, end) {
+        cCircle.call(this, x, y, r, start, end);
+        
+        finished.call(this);
+        return this;
+    }
+    
+    /**
+     * Private version that does not call "finished".
+     * Wrapped by "cCircle" public that does call "finished".
      * hand draw a circle
      *
      * @param x x center
      * @param y y center
      * @param r radius
+     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
+     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
      * @return native library object
      */
-    lib.cCircle = function(x, y, r) {
+    var cCircle = function(x, y, r, start, end) {
+        var PI2 = Math.PI * 2;
+        // sanitize input
+        start = (typeof start == "undefined") ? 0 : Math.min(PI2-0.005*PI2, start);
+        end = (typeof end == "undefined") ? PI2 : Math.min(PI2, end);
         // number of steps
         var steps = Math.ceil(Math.sqrt(r) * 3);
-        // fuzzyness dependent on steps (dependent on radius)
-        var f = C.ffc * Math.sqrt(steps);
+        // fuzzyness dependent on on radius
+        var f = C.ffc * Math.pow(steps, 0.75) 
+                * Math.sqrt((r < 25) ? 25 / r : 1); // boost fuzz for small circles
         // distortion of the circle
         var xs = 0.95 + Math.random() * 0.1;
         var rxs = r * xs;
         var rys = r * (2.0 - xs);
         // lenght of one segment
-        var segLength = Math.PI * 2 / steps;
+        var arcLength = end - start;
+        var segLength = arcLength / steps;
 
-        var x1 = x + rxs; // initial values for i = 0
-        var y1 = y;           // initial values for i = 0
-        var t1 = 0; var t0, x0, y0;
+        var t1 = start; var t0, x0, y0;
+        var x1 = x + Math.cos(t1) * rxs; // initial values for i = 0
+        var y1 = y + Math.sin(t1) * rys; // initial values for i = 0
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
@@ -261,7 +330,6 @@ var bindTo = function(lib, pathFn) {
             path.call(this, x0, y0, fuzz(x0, f), fuzz(y0, f), x1, y1);
         }
         
-        finished.call(this);
         return this;
     }
 
@@ -292,22 +360,36 @@ var bindTo = function(lib, pathFn) {
      * @param y0 y upper left corner
      * @param width width of the rectangle
      * @param height height of the rectangle
+     * @param rh horizontal radius of rounded corners
+     * @param rv vertical radius of rounded corners
      * @return native library object
      */
-    lib.cRect = function(x0, y0, width, height) {
+    lib.cRect = function(x0, y0, width, height, rh, rv) {
+        // sanitize input
+        rh = (typeof rh == "undefined") ? 0 : Math.min(rh, width/2);
+        rv = (typeof rv == "undefined") ? rh : Math.min(rv, height/2);
+        // calculate lower left corner
         var x1 = x0 + width;
         var y1 = y0 + height;
-        cLine.call(this, x0, y0, x1, y0);
-        cLine.call(this, x1, y0, x1, y1);
-        cLine.call(this, x1, y1, x0, y1);
-        cLine.call(this, x0, y1, x0, y0);
+        
+        cLine.call(this, x0+rh, y0, x1-rh, y0);
+        cLine.call(this, x1, y0+rv, x1, y1-rv);
+        cLine.call(this, x1-rh, y1, x0+rh, y1);
+        cLine.call(this, x0, y1-rv, x0, y0+rv);
+        if(rh > 0) {
+            var halfPI = Math.PI / 2;
+            cEllipse.call(this, x0+rh, y0+rv, rh, rv, 0, Math.PI, halfPI*3);
+            cEllipse.call(this, x1-rh, y0+rv, rh, rv, 0, halfPI*3, Math.PI*2);
+            cEllipse.call(this, x1-rh, y1-rv, rh, rv, 0, 0, halfPI);
+            cEllipse.call(this, x0+rh, y1-rv, rh, rv, 0, halfPI, Math.PI);
+        }
         
         finished.call(this);
         return this;
     }
     
     /**
-     * WRAPPER for real, interal "cLine"
+     * WRAPPER for real, private "cLine"
      * Draw a comic style / hand drawn line
      *
      * @param x0 x start
@@ -322,9 +404,10 @@ var bindTo = function(lib, pathFn) {
         finished.call(this);
         return this;
     }
-    
+
     /**
-     * INTERNAL version that does not call "finished"
+     * Private version that does not call "finished".
+     * Wrapped by "cLine" public that does call "finished".
      * Draw a comic style / hand drawn line
      *
      * @param x0 x start
@@ -364,6 +447,8 @@ var bindTo = function(lib, pathFn) {
         if(steps < C.msteps) {
             steps = C.msteps;
         }
+        // fuzz factor
+        f = C.ff / ((steps == C.msteps) ? 1.4 : 1); // reduce for small lines
         // draw line step by step using quadratic Bézier path
         var xt1 = handMovement(x0, x1, 0); // bezier control point
         var yt1 = handMovement(y0, y1); // bezier control point (reuse t0)
@@ -374,7 +459,7 @@ var bindTo = function(lib, pathFn) {
             var xt1 = handMovement(x0, x1, t1); // bezier end point
             var yt1 = handMovement(y0, y1); // bezier end point (reuse t1)
             
-            path.call(this, xt0, yt0, fuzz(xt0, C.ff), fuzz(yt0, C.ff), xt1, yt1);
+            path.call(this, xt0, yt0, fuzz(xt0, f), fuzz(yt0, f), xt1, yt1);
         }
         
         return this;
