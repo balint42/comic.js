@@ -2,7 +2,7 @@ comic.js
 =======
 
 Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
-Thus the current version supports canvas drawing too!
+In the latest version drawing methods return path objects native to the library you decide to use - this allows for e.g. translation and rotation of the comic shapes.
 
 ![screenshot](doc/screenshot.png)
 
@@ -42,48 +42,60 @@ ctx = paper.getContext("2d");
 // IMPORTANT: here we bind comic.js to the canvas context
 COMIC.ctx(ctx);
 ```
-and then for the SVG libraries:
+and then for the SVG libs (SVG.js, D3.js, Raphael.js):
 ```
 // these are the default values if you do not call "init"
 COMIC.init({
     ff: 8,      // fuzz factor for line drawing: bigger -> fuzzier
-    ffc: 0.1,   // fuzz factor for curve drawing: bigger -> fuzzier
+    ffc: 0.4,   // fuzz factor for curve drawing: bigger -> fuzzier
     fsteps: 50, // number of pixels per step: smaller -> fuzzier
     msteps: 4,  // min number of steps: bigger -> fuzzier
 });
 // lets draw!
-stuff.cLine(x1, y1, x2, y2)         // LINE from starting point to end point
-    .cTrian(x1, y1, x2, y2, x3, y3) // TRIANGLE over three corner points
-    .cRect(x1, y1, width, height)   // RECTANGLE at upper left point with width & height
-    .cCircle(x1, y1, r)             // CIRCLE at center point with radius
-    .cEllipse(x1, y1, r1, r2)       // ELLIPSE at center point with two radiuses
-    ;
+stuff.cLine(x1, y1, x2, y2);         // LINE from starting point to end point
+stuff.cTrian(x1, y1, x2, y2, x3, y3); // TRIANGLE over three corner points
+stuff.cRect(x1, y1, width, height, rh, rv); // RECTANGLE at upper left point (x1, y1) with
+                                            // width & height and with rounded (elliptic) corners
+                                            // with horizontal radius rh & vertical radius rv
+stuff.cBezier2(x1, y1, cx, cy, x2, y2); // BEZIER (quadratic) curve with start point (x1, y1),
+                                        // control point (cx, cy) and end point (x2, y2)
+stuff.cBezier3(x1, y1, cx1, cy1, cx2, cy2, x2, y2); // BEZIER (cubic) curve with start point
+                                                    // (x1, y1), control points (cx1, cy1) & (cx2, cy2)
+                                                    // and end point (x2, y2)
+stuff.cCircle(x1, y1, r, start, end); // CIRCLE at center point (x1, y1) with radius r and drawn
+                                      // starting from 0 < start < 2*PI to 0 < end < 2*PI
+stuff.cEllipse(x1, y1, rh, rv, rot, start, end); // ELLIPSE at center point with horizontal radius
+                                                 // rh & vertical radius rv, rotation 0 < rot < 2*PI
+                                                 // and drawn from 0 < start < 2*PI to 0 < end < 2*PI
 // changing the look
 stuff.attr({
     "stroke":"#E0AE9F",
     "stroke-width": 2
 });
 ```
-or for the canvas:
+Beyond this all depends on your choice of library - e.g. translation:
 ```
-// these are the default values if you do not call "init"
-COMIC.init({
-    ff: 8,      // fuzz factor for line drawing: bigger -> fuzzier
-    ffc: 0.1,   // fuzz factor for curve drawing: bigger -> fuzzier
-    fsteps: 50, // number of pixels per step: smaller -> fuzzier
-    msteps: 4,  // min number of steps: bigger -> fuzzier
-});
+// Raphael.js
+stuff.transform("t100,100r45");
+// D3.js
+stuff.attr({ "transform":"translate(30) rotate(45)" });
+// SVG.js
+stuff.transform({ x:100, y:100, rotation:45 });
+```
+For the HTML5 Canvas almost everything works identically.
+However to change the looks:
+```
 // changing the look
 ctx.strokeStyle = "#FDD1BD";
 ctx.lineWidth = 3;
 ctx.globalCompositeOperation = 'destination-over';
+```
+And the Canvas allows method chaining:
+```
 // lets draw!
-stuff.cLine(x1, y1, x2, y2)         // LINE from starting point to end point
-    .cTrian(x1, y1, x2, y2, x3, y3) // TRIANGLE over three corner points
-    .cRect(x1, y1, width, height)   // RECTANGLE at upper left point with width & height
-    .cCircle(x1, y1, r)             // CIRCLE at center point with radius
-    .cEllipse(x1, y1, r1, r2)       // ELLIPSE at center point with two radiuses
-    ;
+stuff.cLine(x1, y1, x2, y2)
+    .cTrian(x1, y1, x2, y2, x3, y3)
+    .cRect(x1, y1, width, height);
 ```
 
 All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. 
