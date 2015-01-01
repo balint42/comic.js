@@ -49,13 +49,18 @@ var ffc = ff / 20;
  */
 var context = undefined;
 /**
+ * @var function code to execute when starting drawing a shape
+ */
+var begin = function() {};
+/**
  * @var function code to execute when finished drawing a shape
  */
-var finished = function() {};
+var finish = function() {};
 /**
- * @var bool whether begun drawing a shape
+ * @var object group / set object holding all paths that make up
+ *             a drawn shape - returned by all drawing functions
  */
-var begun = false;
+var shape = null;
 
 /**
  * Public function to allow user defined options, also
@@ -73,7 +78,7 @@ C.init = function(options) {
     }
     
     if(typeof options["context"] == "object") {
-        bindTo(C.context);
+        bindTo("canvas", C.context);
     }
     
     return C;
@@ -88,7 +93,7 @@ C.init = function(options) {
  */
 C.ctx = function(context) {
     C.init({ "context": context });
-    
+
     return C;
 }
 
@@ -97,11 +102,11 @@ C.ctx = function(context) {
  * given method to draw svg paths. If no method is given (2nd param),
  * it tries to call "path" directly on lib.
  *
+ * @param libName root object to hook in to
  * @param lib root object to hook in to
- * @param path method to draw svg paths (optional)
  * @return void
  */
-var bindTo = function(lib, pathFn) {
+var bindTo = function(libName, lib) {
     /**
      * hand draw a cubic Bezier curve
      *
@@ -116,6 +121,7 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cBezier3 = function(x0, y0, cx0, cy0, cx1, cy1, x1, y1) {
+        begin.call(this);
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
         var d = dist2(x0, y0, x1, y1) * 3;
@@ -143,8 +149,7 @@ var bindTo = function(lib, pathFn) {
             //lib.cCircle.call(this, p0[0], p0[1], 6 );
         }
         
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
     
     /**
@@ -159,6 +164,7 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cBezier2 = function(x0, y0, cx, cy, x1, y1) {
+        begin.call(this);
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
         var d = dist2(x0, y0, x1, y1) * 3;
@@ -182,8 +188,7 @@ var bindTo = function(lib, pathFn) {
             //lib.cCircle.call(this, p0[0], p0[1], 6 );
         }
         
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
 
     /**
@@ -200,15 +205,14 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cEllipse = function(x, y, rh, rv, rot, start, end) {
+        begin.call(this);
         cEllipse.call(this, x, y, rh, rv, rot, start, end);
-        
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
     
     /**
-     * Private version that does not call "finished".
-     * Wrapped by "cEllipse" public that does call "finished".
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cEllipse" public.
      * hand draw an ellipse
      *
      * @param x x center
@@ -264,7 +268,6 @@ var bindTo = function(lib, pathFn) {
             path.call(this, x0, y0, fuzz(x0, fh), fuzz(y0, fv), x1, y1);
         }
         
-        finished.call(this);
         return this;
     }
     
@@ -280,15 +283,14 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cCircle = function(x, y, r, start, end) {
+        begin.call(this);
         cCircle.call(this, x, y, r, start, end);
-        
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
     
     /**
-     * Private version that does not call "finished".
-     * Wrapped by "cCircle" public that does call "finished".
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cCircle" public.
      * hand draw a circle
      *
      * @param x x center
@@ -345,12 +347,11 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cTrian = function(x0, y0, x1, y1, x2, y2) {
+        begin.call(this);
         cLine.call(this, x0, y0, x1, y1);
         cLine.call(this, x1, y1, x2, y2);
         cLine.call(this, x2, y2, x0, y0);
-        
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
 
     /**
@@ -365,6 +366,7 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cRect = function(x0, y0, width, height, rh, rv) {
+        begin.call(this);
         // sanitize input
         rh = (typeof rh == "undefined") ? 0 : Math.min(rh, width/2);
         rv = (typeof rv == "undefined") ? rh : Math.min(rv, height/2);
@@ -384,8 +386,7 @@ var bindTo = function(lib, pathFn) {
             cEllipse.call(this, x0+rh, y1-rv, rh, rv, 0, halfPI, Math.PI);
         }
         
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
     
     /**
@@ -399,15 +400,14 @@ var bindTo = function(lib, pathFn) {
      * @return native library object
      */
     lib.cLine = function(x0, y0, x1, y1) {
+        begin.call(this);
         cLine.call(this, x0, y0, x1, y1);
-        
-        finished.call(this);
-        return this;
+        return finish.call(this);
     }
 
     /**
-     * Private version that does not call "finished".
-     * Wrapped by "cLine" public that does call "finished".
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cLine" public.
      * Draw a comic style / hand drawn line
      *
      * @param x0 x start
@@ -549,37 +549,65 @@ var bindTo = function(lib, pathFn) {
     }
     
     // ----------------------set drawing method-------------------------
-    // if no "path" method given, try calling "path" on "this"
-    var callPath = function(x0, y0, cx, cy, x1, y1) {
-        this.path(
-            ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
-        );
-    }
-    // if 2d canvas context given, use context method
-    var ctxPath = function(x0, y0, cx, cy, x1, y1) {
-        if(!begun) {
-            begun = true;
-            this.beginPath();
+    // HTML5 Canvas context
+    if(libName == "canvas") {
+        path = function(x0, y0, cx, cy, x1, y1) {
+            this.moveTo(x0, y0);
+            this.quadraticCurveTo(cx, cy, x1, y1);
         }
-        this.moveTo(x0, y0);
-        this.quadraticCurveTo(cx, cy, x1, y1);
-    }
-    // if no 2d canvas context given, but "path" method given
-    var svgPath = function(x0, y0, cx, cy, x1, y1) {
-        pathFn.call(this,
-            ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
-        );
-    }
-    // set the right method
-    if(typeof C.context != "undefined") {
-        path = ctxPath;
-        finished = function() {
+        finish = function() {
             this.stroke();
-            begun = false;
+            return this;
+        };
+        begin = function() {
+            this.beginPath();
+            return this;
         };
     }
-    else {
-        path = (typeof pathFn == "undefined") ? callPath : svgPath;
+    // Raphael.js
+    if(libName == "raphael") {
+        path = function(x0, y0, cx, cy, x1, y1) {
+            shape.push(this.path(
+                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
+            ));
+        };
+        finish = function() {
+            return shape;
+        };
+        begin = function() {
+            shape = this.set();
+            return shape;
+        };
+    }
+    // D3.js
+    if(libName == "d3") {
+        path = function(x0, y0, cx, cy, x1, y1) {
+            shape.append("svg:path").attr("d",
+                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
+            );
+        };
+        finish = function() {
+            return shape;
+        };
+        begin = function() {
+            shape = this.append("g");
+            return shape;
+        };
+    }
+    // SVG.js
+    if(libName == "svg") {
+        path = function(x0, y0, cx, cy, x1, y1) {
+            shape.path(
+                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
+            );
+        };
+        finish = function() {
+            return shape;
+        };
+        begin = function() {
+            shape = this.group();
+            return shape;
+        };
     }
 }
 
@@ -594,27 +622,23 @@ C.init({
 
 // Raphael.js
 if(typeof Raphael != "undefined") {
-    bindTo(Raphael.fn,       // root object to hook in to
-           Raphael.fn.path); // method to draw svg paths
+    bindTo("raphael",  // library name
+           Raphael.fn) // root object to hook in to
 }
 
 // SVG.js
 if(typeof SVG != "undefined") {
     var dummy = {};
-    bindTo(dummy);
+    bindTo("svg", dummy);
     SVG.extend(SVG.Set, dummy);
     SVG.extend(SVG.Group, dummy);
     SVG.extend(SVG.Element, dummy);
 }
 
 // D3.js
-// wrapper for creating paths with d3
-var d3path = function(pathStr) {
-    this.append('path').attr('d', pathStr);
-}
 if(typeof d3 != "undefined") {
-    bindTo(d3.selection.prototype, d3path);
-    bindTo(d3.selection.enter.prototype, d3path);
+    bindTo("d3", d3.selection.prototype);
+    bindTo("d3", d3.selection.enter.prototype);
 }
 
 })();
