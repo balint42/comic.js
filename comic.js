@@ -60,11 +60,6 @@ var finish = function() {};
  * @var string path string built upon subsequent calls of "path" function
  */
 var pathStr = "";
-/**
- * @var object group / set object holding all paths that make up
- *             a drawn shape - returned by all drawing functions
- */
-var shape = null;
 
 /**
  * Public function to allow user defined options, also
@@ -150,7 +145,6 @@ var bindTo = function(libName, lib) {
                 fuzz((pc0[0]+pc1[0])/2, f), // just make one control point
                 fuzz((pc0[1]+pc1[1])/2, f),
                 p1[0], p1[1]);
-            //lib.cCircle.call(this, p0[0], p0[1], 6 );
         }
         
         return finish.call(this);
@@ -189,7 +183,6 @@ var bindTo = function(libName, lib) {
             p0 = curve1[0]; pc = curve1[1]; p1 = curve1[2];
             
             path.call(this, p0[0], p0[1], fuzz(pc[0], f), fuzz(pc[1], f), p1[0], p1[1]);
-            //lib.cCircle.call(this, p0[0], p0[1], 6 );
         }
         
         return finish.call(this);
@@ -482,51 +475,51 @@ var bindTo = function(libName, lib) {
      * @license http://en.wikipedia.org/wiki/MIT_License MIT License
      */
     var bsplit = function(points, t0) {
-            var n = points.length - 1; // number of control points
-            var b = [];                  // coefficients as in De Casteljau's algorithm
-            var res1 = [];           // first curve resulting control points
-            var res2 = [];           // second curve resulting control points
-            var t1 = 1 - t0;
+        var n = points.length - 1; // number of control points
+        var b = [];                  // coefficients as in De Casteljau's algorithm
+        var res1 = [];           // first curve resulting control points
+        var res2 = [];           // second curve resulting control points
+        var t1 = 1 - t0;
             
-            // multiply point with scalar factor
-            var pf = function(p, f) {
-                var res = [];
-                for(var i = 0; i < p.length; i++) {
-                    res.push(f * p[i]);
-                }
-                return res;
-            };
-            // add points as vectors
-            var pp = function(p1, p2) {
-                var res = [];
-                for(var i = 0; i < Math.min(p1.length, p2.length); i++) {
-                    res.push(p1[i] + p2[i]);
-                }
-                return res;
-            };
-            
-            // set original coefficients: b[i][0] = points[i]
-            for(var i = 0; i <= n; i++) {
-                points[i] = (typeof points[i] == "object") ? points[i] : [points[i]];
-                b.push([ points[i] ]);
+        // multiply point with scalar factor
+        var pf = function(p, f) {
+            var res = [];
+            for(var i = 0; i < p.length; i++) {
+                res.push(f * p[i]);
             }
-            // get all coefficients
-            for(var j = 1; j <= n; j++) {
-                for(var i = 0; i <= (n-j); i++) {
-                    b[i].push( pp(
-                            pf(b[i][j-1], t1),
-                            pf(b[i+1][j-1], t0)
-                    ));
-                }
-            }
-            // set result: res1 & res2
-            for(var j = 0; j <= n; j++) {
-                res1.push(b[0][j]);
-                res2.push(b[j][n-j]);
-            }
-            
-            return [res1, res2];
+            return res;
         };
+        // add points as vectors
+        var pp = function(p1, p2) {
+            var res = [];
+            for(var i = 0; i < Math.min(p1.length, p2.length); i++) {
+                res.push(p1[i] + p2[i]);
+            }
+            return res;
+        };
+            
+        // set original coefficients: b[i][0] = points[i]
+        for(var i = 0; i <= n; i++) {
+            points[i] = (typeof points[i] == "object") ? points[i] : [points[i]];
+            b.push([ points[i] ]);
+        }
+        // get all coefficients
+        for(var j = 1; j <= n; j++) {
+            for(var i = 0; i <= (n-j); i++) {
+                b[i].push( pp(
+                        pf(b[i][j-1], t1),
+                        pf(b[i+1][j-1], t0)
+                ));
+            }
+        }
+        // set result: res1 & res2
+        for(var j = 0; j <= n; j++) {
+            res1.push(b[0][j]);
+            res2.push(b[j][n-j]);
+        }
+            
+        return [res1, res2];
+    };
     
     /**
      * Shift given value randomly by fuzzyness factor f
@@ -569,9 +562,13 @@ var bindTo = function(libName, lib) {
         };
     }
     else {
-        // for all svg libs let path be as below
+        // for all svg libs let "path" & "begin" be as below
         path = function(x0, y0, cx, cy, x1, y1) {
             pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
+        };
+        begin = function() {
+            pathStr = "";
+            return this;
         };
     }
     // Raphael.js
@@ -579,29 +576,17 @@ var bindTo = function(libName, lib) {
         finish = function() {
             return this.path(pathStr);
         };
-        begin = function() {
-            pathStr = "";
-            return this;
-        };
     }
     // D3.js
     if(libName == "d3") {
         finish = function() {
             return this.append("svg:path").attr("d", pathStr);
         };
-        begin = function() {
-            pathStr = "";
-            return this;
-        };
     }
     // SVG.js
     if(libName == "svg") {
         finish = function() {
             return this.path(pathStr);
-        };
-        begin = function() {
-            pathStr = "";
-            return this;
         };
     }
 }
