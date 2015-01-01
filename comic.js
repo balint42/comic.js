@@ -57,6 +57,10 @@ var begin = function() {};
  */
 var finish = function() {};
 /**
+ * @var string path string built upon subsequent calls of "path" function
+ */
+var pathStr = "";
+/**
  * @var object group / set object holding all paths that make up
  *             a drawn shape - returned by all drawing functions
  */
@@ -564,49 +568,40 @@ var bindTo = function(libName, lib) {
             return this;
         };
     }
+    else {
+        // for all svg libs let path be as below
+        path = function(x0, y0, cx, cy, x1, y1) {
+            pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
+        };
+    }
     // Raphael.js
     if(libName == "raphael") {
-        path = function(x0, y0, cx, cy, x1, y1) {
-            shape.push(this.path(
-                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
-            ));
-        };
         finish = function() {
-            return shape;
+            return this.path(pathStr);
         };
         begin = function() {
-            shape = this.set();
-            return shape;
+            pathStr = "";
+            return this;
         };
     }
     // D3.js
     if(libName == "d3") {
-        path = function(x0, y0, cx, cy, x1, y1) {
-            shape.append("svg:path").attr("d",
-                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
-            );
-        };
         finish = function() {
-            return shape;
+            return this.append("svg:path").attr("d", pathStr);
         };
         begin = function() {
-            shape = this.append("g");
-            return shape;
+            pathStr = "";
+            return this;
         };
     }
     // SVG.js
     if(libName == "svg") {
-        path = function(x0, y0, cx, cy, x1, y1) {
-            shape.path(
-                ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ')
-            );
-        };
         finish = function() {
-            return shape;
+            return this.path(pathStr);
         };
         begin = function() {
-            shape = this.group();
-            return shape;
+            pathStr = "";
+            return this;
         };
     }
 }
