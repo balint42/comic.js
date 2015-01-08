@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.8 };
+COMIC = { version: 0.9 };
 
 (function() {
 /**
@@ -60,6 +60,10 @@ var finish = function() {};
  * @var string path string built upon subsequent calls of "path" function
  */
 var pathStr = "";
+/**
+ * @var point current drawing point of path
+ */
+var pathPos = { x:0, y:0 };
 
 /**
  * Public function to allow user defined options, also
@@ -107,6 +111,7 @@ C.ctx = function(context) {
  */
 var bindTo = function(libName, lib) {
     /**
+     * WRAPPER for real, private "cBezier3"
      * hand draw a cubic Bezier curve
      *
      * @param x0 x starting point
@@ -121,10 +126,30 @@ var bindTo = function(libName, lib) {
      */
     lib.cBezier3 = function(x0, y0, cx0, cy0, cx1, cy1, x1, y1) {
         begin.call(this);
+        cBezier3.call(this, x0, y0, cx0, cy0, cx1, cy1, x1, y1);
+        return finish.call(this);
+    }
+    
+    /**
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cBezier3" public.
+     * hand draw a cubic Bezier curve
+     *
+     * @param x0 x starting point
+     * @param y0 y starting point
+     * @param cx0 x 1st control point
+     * @param cy0 y 1st control point
+     * @param cx1 x 2nd control point
+     * @param cy1 y 2nd control point
+     * @param x1 x end point
+     * @param y1 y end point
+     * @return native library object
+     */
+    var cBezier3 = function(x0, y0, cx0, cy0, cx1, cy1, x1, y1) {
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
         var d = dist2(x0, y0, x1, y1) * 3;
-        var steps = Math.floor(Math.pow(d / C.fsteps, 0.9));
+        var steps = Math.ceil(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
         var f = C.ff * 0.8;
         
@@ -147,10 +172,11 @@ var bindTo = function(libName, lib) {
                 p1[0], p1[1]);
         }
         
-        return finish.call(this);
+        return this;
     }
-    
+
     /**
+     * WRAPPER for real, private "cBezier2"
      * hand draw a quadratic Bezier curve
      *
      * @param x0 x starting point
@@ -163,10 +189,28 @@ var bindTo = function(libName, lib) {
      */
     lib.cBezier2 = function(x0, y0, cx, cy, x1, y1) {
         begin.call(this);
+        cBezier2.call(this, x0, y0, cx, cy, x1, y1);
+        return finish.call(this);
+    }
+    
+    /**
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cBezier2" public.
+     * hand draw a quadratic Bezier curve
+     *
+     * @param x0 x starting point
+     * @param y0 y starting point
+     * @param cx x control point
+     * @param cy y control point
+     * @param x1 x end point
+     * @param y1 y end point
+     * @return native library object
+     */
+    var cBezier2 = function(x0, y0, cx, cy, x1, y1) {
         // number of steps - this is a very primitive approach to
         // estimate the Bezier arc length
         var d = dist2(x0, y0, x1, y1) * 3;
-        var steps = Math.floor(Math.pow(d / C.fsteps, 0.9));
+        var steps = Math.ceil(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
         var f = C.ff * 0.8;
         
@@ -185,7 +229,7 @@ var bindTo = function(libName, lib) {
             path.call(this, p0[0], p0[1], fuzz(pc[0], f), fuzz(pc[1], f), p1[0], p1[1]);
         }
         
-        return finish.call(this);
+        return this;
     }
 
     /**
@@ -350,9 +394,10 @@ var bindTo = function(libName, lib) {
         cLine.call(this, x2, y2, x0, y0);
         return finish.call(this);
     }
-
+    
     /**
-     * Draw a rectangle using line function
+     * WRAPPER for real, private "cRect"
+     * Draw a comic style / hand drawn rectangle using line function
      *
      * @param x0 x upper left corcer
      * @param y0 y upper left corner
@@ -363,6 +408,23 @@ var bindTo = function(libName, lib) {
      * @return native library object
      */
     lib.cRect = function(x0, y0, width, height, rh, rv) {
+        begin.call(this);
+        cRect.call(this, x0, y0, width, height, rh, rv);
+        return finish.call(this);
+    }
+
+    /**
+     * Draw a comic style / hand drawn rectangle using line function
+     *
+     * @param x0 x upper left corcer
+     * @param y0 y upper left corner
+     * @param width width of the rectangle
+     * @param height height of the rectangle
+     * @param rh horizontal radius of rounded corners
+     * @param rv vertical radius of rounded corners
+     * @return native library object
+     */
+    var cRect = function(x0, y0, width, height, rh, rv) {
         begin.call(this);
         // sanitize input
         rh = (typeof rh == "undefined") ? 0 : Math.min(rh, width/2);
@@ -440,7 +502,7 @@ var bindTo = function(libName, lib) {
         
         // calculate number of steps
         var d = dist2(x0, y0, x1, y1);
-        var steps = d / C.fsteps;
+        var steps = Math.ceil(d / C.fsteps);
         if(steps < C.msteps) {
             steps = C.msteps;
         }
@@ -463,6 +525,452 @@ var bindTo = function(libName, lib) {
     }
     
     /**
+     * Wrapper calling C.magic with the object called on.
+     *
+     * @return native lib object
+     */
+    lib.magic = function() {
+        return C.magic(this);
+    }
+    /**
+     * Function to cartoonize any given svg.
+     *
+     * @param svgs source svg / selection with source svgs to cartoonize
+     * @return native lib object
+     */
+    C.magic = function(svgs) {
+        svgs = isArray(svgs) ? svgs : [svgs];
+        var unwrap = function(e) {
+            // unwrap from document & SVGDocument if needed
+            if(e.contentDocument) e = e.contentDocument;
+            if(! e.tagName) {
+                var msg = "error: non svg element given";
+                if(typeof e.children == "object") {
+                    if(! e.children[0]) throw msg;
+                    e = e.children[0];
+                }
+                else if(typeof e.parent == "object") {
+                    if(! e.parent.node) throw msg;
+                    e = e.parent.node;
+                }
+                else throw msg;
+                if(! e.tagName) throw msg;
+                if(e.tagName != "svg") throw msg;
+            }
+            else if(e.tagName != "svg") throw msg;
+            return e;
+        };
+        // rerun for list[i>0]; wont happen in reruns since then svgList.length = 1
+        for(var i = 1; i < svgs.length; i++) {
+            C.magic(unwrap(svgs[i]));
+        }
+        svg = unwrap(svgs[0]);
+        
+        // do depth-frist tree traversal & skip branches at unknown tags
+        (function walk(e) {
+            // recursion if known, unvisited tag - skip branch otherwise
+            var adj = e.children;
+            for(var i = 0; i < adj.length; i++) {
+                if( ! adj[i].hasOwnProperty("walked") ) {
+                    adj[i].walked = true;
+                    if(["rect", "circle", "ellipse", "line", "polyline", "polygon",
+                        "path", "g", "svg"].indexOf(adj[i].tagName) >= 0) {
+                        walk(adj[i]);
+                    }
+                }
+            }
+            // do changes on the element
+            begin(); // we are using "begin" but wont be using "finish"
+            switch(e.tagName) {
+                case "rect":
+                    reRect(e);
+                    break;
+                case "circle":
+                    reCircle(e);
+                    break;
+                case "ellipse":
+                    reEllipse(e);
+                    break;
+                case "line":
+                    reLine(e);
+                    break;
+                case "polyline":
+                    rePolyline(e);
+                    break;
+                case "polygon":
+                    rePolygon(e);
+                    break;
+                case "path":
+                    rePath(e);
+                    break;
+                case "g":
+                    // nothing to do for "g"
+                    break;
+                case "svg":
+                    // nothing to do for "svg"
+                    break;
+                default:
+            }
+            // if a basic shape encountered replace it with path
+            // NOTE: we copy attributes, but loose event listeners!
+            var p = e;
+            if(["rect", "circle", "ellipse", "line",
+                "polyline", "polygon"].indexOf(e.tagName) >= 0) {
+                p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                // copy attributes, avoid those specific to non-paths
+                var atts = e.attributes;
+                for (var i = 0; i < atts.length; i++) {
+                    if(["x", "y", "rx", "ry", "width", "height", "cx", "cy", "r",
+                        "x1", "y1", "x2", "y2", "points"].indexOf(atts[i].name) < 0)
+                        p.setAttribute(atts[i].name, atts[i].value);
+                }
+                e.parentNode.replaceChild(p, e);
+            }
+            // if a path has been prepared adjust "d" attribute
+            if(pathStr.length > 0) {
+                p.setAttribute("d", pathStr);
+            }
+        })(svg);
+        
+        return svg;
+    }
+
+    /**
+     * Function to get SVGAnimatedLength values.
+     * @param e svg element
+     * @return number
+     */
+    var g = function(e) { return e.animVal.value; };
+
+    /**
+     * Function to redraw an svg rect in cartoon style.
+     *
+     * @param e svg rect element
+     * @return void
+     */
+    var reRect = function(e) {
+        // call internal method that only builds pathStr
+        cRect.call(this, g(e.x), g(e.y),
+                   g(e.width), g(e.height),
+                   g(e.rx), g(e.ry));
+    }
+    
+    /**
+     * Function to redraw an svg circle in cartoon style.
+     *
+     * @param e svg circle element
+     * @return void
+     */
+    var reCircle = function(e) {
+        cCircle.call(this, g(e.cx), g(e.cy), g(e.r));
+    }
+    
+    /**
+     * Function to redraw an svg ellipse in cartoon style.
+     *
+     * @param e svg ellipse element
+     * @return void
+     */
+    var reEllipse = function(e) {
+        cEllipse.call(this, g(e.cx), g(e.cy), g(e.rx), g(e.ry));
+    }
+    
+    /**
+     * Function to redraw an svg line in cartoon style.
+     *
+     * @param e svg line element
+     * @return void
+     */
+    var reLine = function(e) {
+        cLine.call(this, g(e.x1), g(e.y1), g(e.x2), g(e.y2));
+    }
+    
+    /**
+     * Function to redraw an svg polyline in cartoon style.
+     *
+     * @param e svg polyline element
+     * @return void
+     */
+    var rePolyline = function(e) {
+        var points = e.points;
+        var p1 = points.getItem(0);
+        for(var j = 1; j < points.length; j++) {
+            var p2 = points.getItem(j);
+            cLine.call(this, p1.x, p1.y, p2.x, p2.y);
+            p1 = p2;
+        }
+    }
+    
+    /**
+     * Function to redraw an svg polygon in cartoon style.
+     *
+     * @param e svg polygon element
+     * @return void
+     */
+    var rePolygon = function(e) {
+        var points = e.points;
+        var p1 = points.getItem(0);
+        for(var j = 1; j < points.length; j++) {
+            var p2 = points.getItem(j);
+            cLine.call(this, p1.x, p1.y, p2.x, p2.y);
+            p1 = p2;
+        }
+        p1 = points.getItem(0);
+        cLine.call(this, p2.x, p2.y, p1.x, p1.y);
+    }
+    
+    /**
+     * Function to redraw an svg path in cartoon style.
+     *
+     * @param e svg path element
+     * @return void
+     */
+    var rePath = function(e) {
+        // now lets re-draw all kinds of paths
+        var pos = { x:0, y:0 };  // SVG drawing position
+        var ipos = { x:0, y:0 }; // SVG initial position
+        var cpos = undefined;    // SVG last cubic bezier control point
+        var qpos = undefined;    // SVG last cubic bezier control point
+        var org = { x:0, y:-0 }; // coordinate origin
+        var cmds = parsePath(e);
+        for(var j = 0; j < cmds.length; j++) {
+            var cmd = cmds[j];
+            var name = cmd.shift();
+            // set origin either to absolute (0,0) or to relative (current pos)
+            var setOrg = function() {
+                org = (name == name.toUpperCase()) ?
+                      { x:0, y:0 } : { x:pos.x, y:pos.y };
+            };
+            setOrg();
+            switch(name) {
+                case "M": // "move to"
+                case "m":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    // move pos
+                    pos = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                    ipos = pos; // set initial pos to pos moved to
+                    // further points are "line to"
+                    while(cmd.length > 1) {
+                        var p = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        cLine.call(this, pos.x, pos.y, p.x, p.y);
+                        pos = p;
+                        setOrg();
+                    }
+                    break;
+                case "Q": // quadratic bezier
+                case "q":
+                    cpos = undefined; // unset last cubic bezier control point
+                    while(cmd.length > 3) {
+                        // control point & end point
+                        var p1 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        var p2 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        cBezier2.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y);
+                        pos = p2;
+                        qpos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "T": // smooth / short hand quadratic bezier
+                case "t":
+                    cpos = undefined; // unset last cubic bezier control point
+                    while(cmd.length > 1) {
+                        // end point
+                        var p2 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        // control point is last control point reflection
+                        var p1 = (typeof qpos == "undefined") ? pos :
+                                  { x:2*pos.x-qpos.x, y:2*pos.y-qpos.y };
+                        cBezier2.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y);
+                        pos = p2;
+                        qpos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "C": // cubic bezier
+                case "c":
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 5) {
+                        // control points & end point
+                        var p1 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        var p2 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        var p3 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        cBezier3.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+                        pos = p3;
+                        cpos = p2;
+                        setOrg();
+                    }
+                    break;
+                case "S": // smooth / short hand cubic bezier
+                case "s":
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 3) {
+                        // 2nd control point & end point
+                        var p2 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        var p3 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        // control point is last control point reflection
+                        var p1 = (typeof cpos == "undefined") ? pos :
+                                  // reflection on "pos" point
+                                  { x:2*pos.x-cpos.x, y:2*pos.y-cpos.y };
+                                  //reflect(cpos, pos, {x:-1*(pos.x-cpos.x), y:(pos.y-cpos.y)});
+                        cBezier3.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+                        pos = p3;
+                        cpos = p2;
+                        setOrg();
+                    }
+                    break;
+                case "A": // elliptic arc
+                case "a":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 6) {
+                        var rx = cmd.shift();  // horizontal radius
+                        var ry = cmd.shift();  // vertical radius
+                        var rot = cmd.shift(); // ellipse rotation
+                        var fa = cmd.shift();  // large arc flag
+                        var fs = cmd.shift();  // sweep flag
+                        var p1 = { x:org.x+cmd.shift(), // end point
+                                   y:org.y+cmd.shift() };
+                        // skip if end equals start & if rx & ry are 0
+                        if(p1.x == pos.x && p1.y == pos.y) continue;
+                        if(rx == 0 && ry == 0) continue;
+                        // do "line to" if rx XOR ry are 0
+                        if(rx == 0 || ry == 0) {
+                            // do horizontal or vertical "line to"
+                            p1 = (ry == 0) ? { x:p1.x, y:pos.y }
+                                 : { x:pos.x, y:p1.y };
+                            cLine.call(this, pos.x, pos.y, p1.x, p1.y);
+                            pos = p1;
+                            setOrg();
+                            continue;
+                        }
+                        // do normal elliptic arc if we got this far
+                        var retval = getEllipse(pos, p1, rx, ry, rot, fa, fs);
+                        var cp = retval[0];
+                        var start = retval[1].x;
+                        var end = retval[1].y;
+                        cEllipse.call(this, cp.x, cp.y, rx, ry, rot, start, end);
+                        pos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "L": // "line to"
+                case "l":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 1) {
+                        var p1 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
+                        cLine.call(this, pos.x, pos.y, p1.x, p1.y);
+                        pos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "H": // horizontal "line to"
+                case "h":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 0) {
+                        var p1 = { x:org.x+cmd.shift(), y:pos.y };
+                        cLine.call(this, pos.x, pos.y, p1.x, p1.y);
+                        pos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "V": // vertical "line to"
+                case "v":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    while(cmd.length > 0) {
+                        var p1 = { x:pos.x, y:org.y+cmd.shift() };
+                        cLine.call(this, pos.x, pos.y, p1.x, p1.y);
+                        pos = p1;
+                        setOrg();
+                    }
+                    break;
+                case "Z": // "close path"
+                case "z":
+                    cpos = undefined; // unset last cubic bezier control point
+                    qpos = undefined; // unset last quadratic bezier control point
+                    cLine.call(this, pos.x, pos.y, ipos.x, ipos.y);
+                    pathStr = pathStr + "z";
+                    pos = ipos;
+                    break;
+                default:
+            }
+        }
+    }
+
+    /**
+     * @brief Reflect point p along line through points p0 and p1
+     * 
+     * @param p point to reflect
+     * @param p0 first point for reflection line
+     * @param p1 second point for reflection line
+     * @return point
+     */
+    var reflect = function(p, p0, p1) {
+        var dx, dy, a, b, x, y;
+
+        dx = p1.x - p0.x;
+        dy = p1.y - p0.y;
+        a = (dx * dx - dy * dy) / (dx * dx + dy * dy);
+        b = 2 * dx * dy / (dx * dx + dy * dy);
+        x = Math.round(a * (p.x - p0.x) + b * (p.y - p0.y) + p0.x); 
+        y = Math.round(b * (p.x - p0.x) - a * (p.y - p0.y) + p0.y);
+
+        return { x:x, y:y };
+    }
+
+    /**
+     * @brief getEllipse calculates the center point and the start angle
+     * and end angle of an ellipse from the obscure SVG parameters of an
+     * elliptic arc. It returns an array with two points, the center
+     * point and a point with the start and end angles.
+     * 
+     * @param ps starting point
+     * @param pe end point
+     * @param rh horizontal radius
+     * @param rv vertical radius
+     * @param rot rotation in degree
+     * @param fa large arc flag
+     * @param fs sweep flag
+     * @return array
+     */
+    var getEllipse = function(ps, pe, rh, rv, rot, fa, fs) {
+        // function for calculating angle between two vectors
+        var angle = function(u, v) {
+            var sign = ((u.x * v.y - u.y * v.x) > 0) ? 1 : -1;
+            return sign * Math.acos(
+                (u.x * v.x + u.y * v.y) / 
+                (Math.sqrt(u.x*u.x + u.y*u.y) * Math.sqrt(u.x*u.x + u.y*u.y))
+            );
+        }
+        // sanitize input
+        rot = rot % 360;
+        rh = Math.abs(rh);
+        rv = Math.abs(rv);
+        // do calculation
+        var cosRot = Math.cos(rot);
+        var sinRot = Math.sin(rot);
+        var x = cosRot * (ps.x - pe.x) / 2 + sinRot * (ps.y - pe.y) / 2;
+        var y = -1 * sinRot * (ps.x - pe.x) / 2 + cosRot * (ps.y - pe.y) / 2;
+        var rh2 = rh * rh; var rv2 = rv * rv; var x2 = x * x; var y2 = y * y;
+        var fr = ((fa == fs) ? -1 : 1) * Math.sqrt(
+                    (rh2 * (rv2 - y2) - rv2 * x2) /
+                    (rh2 * y2 + rv2 * x2)
+                 );
+        var xt = fr * rh * y / rv;
+        var yt = -1 * fr * rv * x / rh;
+        var cx = cosRot * xt - sinRot * yt + (ps.x + pe.x) / 2;
+        var cy = sinRot * xt + cosRot * yt + (ps.y + pe.y) / 2;
+        var vt = { x:(x-xt)/rh, y:(y-yt)/rv };
+        var phi1 = angle({ x:1, y:0 }, vt);
+        var phiD = angle(vt, { x:(-x-xt)/rh, y:(-y-yt)/rv }) % 360;
+        var phi2 = phi1 + phiD;
+
+        return [{ x:cx, y:cy }, { x:phi1, y:phi2 }];
+    }
+    
+    /**
      * @brief De Casteljau's algorithm splitting n-th degree Bezier curve
      *
      * Given n+1 control points for an n-th degree Bezier curve and
@@ -476,9 +984,9 @@ var bindTo = function(libName, lib) {
      */
     var bsplit = function(points, t0) {
         var n = points.length - 1; // number of control points
-        var b = [];                  // coefficients as in De Casteljau's algorithm
-        var res1 = [];           // first curve resulting control points
-        var res2 = [];           // second curve resulting control points
+        var b = [];       // coefficients as in De Casteljau's algorithm
+        var res1 = [];    // first curve resulting control points
+        var res2 = [];    // second curve resulting control points
         var t1 = 1 - t0;
             
         // multiply point with scalar factor
@@ -545,12 +1053,22 @@ var bindTo = function(libName, lib) {
         return Math.sqrt(dx * dx + dy * dy);
     }
     
+    /**
+     * Test whether the given variable is an array.
+     * @param a var to test
+     * @return bool
+     */
+    var isArray = function(a) {
+        return Object.prototype.toString.call(a) === '[object Array]';
+    }
+    
     // ----------------------set drawing method-------------------------
     // HTML5 Canvas context
     if(libName == "canvas") {
         path = function(x0, y0, cx, cy, x1, y1) {
             this.moveTo(x0, y0);
             this.quadraticCurveTo(cx, cy, x1, y1);
+            pathPos = { x:x1, y:y1 };
         }
         finish = function() {
             this.stroke();
@@ -564,10 +1082,19 @@ var bindTo = function(libName, lib) {
     else {
         // for all svg libs let "path" & "begin" be as below
         path = function(x0, y0, cx, cy, x1, y1) {
-            pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
+            // "move to" only required if (x0, y0) != current pos AND as first path cmd
+            if(pathPos.x != x0 || pathPos.y != y0 || pathStr.length == 0) {
+                pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
+            }
+            else {
+                pathStr = pathStr + ["Q", cx, cy, x1, y1].join(' ');
+            }
+            pathPos = { x:x1, y:y1 };
+            return this;
         };
         begin = function() {
             pathStr = "";
+            pathPos = { x:0, y:0 };
             return this;
         };
     }
@@ -585,10 +1112,75 @@ var bindTo = function(libName, lib) {
     }
     // SVG.js
     if(libName == "svg") {
+        // draws path object from current pathStr on "this" & returns it
         finish = function() {
             return this.path(pathStr);
         };
     }
+}
+
+/**
+ * @brief Parse an svg path object and return commands
+ * Parse an svg path object and generate an Array of path commands.
+ * Each command is an Array of the form `[command, arg1, arg2, ...]`
+ * NOTE: parsing is done via "pathSegList" which is faster and more
+ * reliable than parsing the path string directly, but might not
+ * work in old browsers.
+ *
+ * @author Balint Morvai <balint@morvai.de>
+ * @license http://en.wikipedia.org/wiki/MIT_License MIT License
+ * @param {Object} path object
+ * @return {Array}
+ */
+function parsePath(path) {
+    var list = path.pathSegList;
+    var res = [];
+    for(var i = 0; i < list.length; i++) {
+        var cmd = list[i].pathSegTypeAsLetter;
+        var sub = [];
+        switch(cmd) {
+            case "C":
+            case "c":
+                sub.unshift(list[i].y2); sub.unshift(list[i].x2);
+            case "Q":
+            case "q":
+                sub.unshift(list[i].y1); sub.unshift(list[i].x1);
+            case "M":
+            case "m":
+            case "L":
+            case "l":
+                sub.push(list[i].x); sub.push(list[i].y);
+                break;
+            case "A":
+            case "a":
+                sub.push(list[i].r1); sub.push(list[i].r2);
+                sub.push(list[i].angle);
+                sub.push(list[i].largeArcFlag);
+                sub.push(list[i].sweepFlag);
+                sub.push(list[i].x); sub.push(list[i].y);
+                break;
+            case "H":
+            case "h":
+                sub.push(list[i].x);
+                break;
+            case "V":
+            case "v":
+                sub.push(list[i].y);
+                break;
+            case "S":
+            case "s":
+                sub.push(list[i].x2); sub.push(list[i].y2);
+                sub.push(list[i].x); sub.push(list[i].y);
+                break;
+            case "T":
+            case "t":
+                sub.push(list[i].x); sub.push(list[i].y);
+                break;
+        }
+        sub.unshift(cmd);
+        res.push(sub);
+    }
+    return res;
 }
 
 // set options
@@ -602,8 +1194,8 @@ C.init({
 
 // Raphael.js
 if(typeof Raphael != "undefined") {
-    bindTo("raphael",  // library name
-           Raphael.fn) // root object to hook in to
+    bindTo("raphael",   // library name
+           Raphael.fn); // root object to hook in to
 }
 
 // SVG.js
@@ -620,5 +1212,8 @@ if(typeof d3 != "undefined") {
     bindTo("d3", d3.selection.prototype);
     bindTo("d3", d3.selection.enter.prototype);
 }
+
+// comic.js - bind to self
+bindTo("self", COMIC);
 
 })();
