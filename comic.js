@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.9 };
+COMIC = { version: 0.91 };
 
 (function() {
 /**
@@ -279,7 +279,7 @@ var bindTo = function(libName, lib) {
         // fuzzyness dependent on radius
         var fh = C.ffc * Math.pow(rh * 3, 0.5)
                 * Math.sqrt((rh < 25) ? 25 / rh : 1); // boost fuzz for small ellipses
-        var fv = C.ffc * Math.pow(rv * 3, 0.5) 
+        var fv = C.ffc * Math.pow(rv * 3, 0.5)
                 * Math.sqrt((rv < 25) ? 25 / rv : 1);
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
@@ -349,7 +349,7 @@ var bindTo = function(libName, lib) {
         // number of steps
         var steps = Math.ceil(Math.sqrt(r) * 3);
         // fuzzyness dependent on on radius
-        var f = C.ffc * Math.pow(steps, 0.75) 
+        var f = C.ffc * Math.pow(steps, 0.75)
                 * Math.sqrt((r < 25) ? 25 / r : 1); // boost fuzz for small circles
         // distortion of the circle
         var xs = 0.95 + Math.random() * 0.1;
@@ -726,7 +726,6 @@ var bindTo = function(libName, lib) {
      * @return void
      */
     var rePath = function(e) {
-        // now lets re-draw all kinds of paths
         var pos = { x:0, y:0 };  // SVG drawing position
         var ipos = { x:0, y:0 }; // SVG initial position
         var cpos = undefined;    // SVG last cubic bezier control point
@@ -809,9 +808,7 @@ var bindTo = function(libName, lib) {
                         var p3 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
                         // control point is last control point reflection
                         var p1 = (typeof cpos == "undefined") ? pos :
-                                  // reflection on "pos" point
                                   { x:2*pos.x-cpos.x, y:2*pos.y-cpos.y };
-                                  //reflect(cpos, pos, {x:-1*(pos.x-cpos.x), y:(pos.y-cpos.y)});
                         cBezier3.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
                         pos = p3;
                         cpos = p2;
@@ -900,27 +897,6 @@ var bindTo = function(libName, lib) {
     }
 
     /**
-     * @brief Reflect point p along line through points p0 and p1
-     * 
-     * @param p point to reflect
-     * @param p0 first point for reflection line
-     * @param p1 second point for reflection line
-     * @return point
-     */
-    var reflect = function(p, p0, p1) {
-        var dx, dy, a, b, x, y;
-
-        dx = p1.x - p0.x;
-        dy = p1.y - p0.y;
-        a = (dx * dx - dy * dy) / (dx * dx + dy * dy);
-        b = 2 * dx * dy / (dx * dx + dy * dy);
-        x = Math.round(a * (p.x - p0.x) + b * (p.y - p0.y) + p0.x); 
-        y = Math.round(b * (p.x - p0.x) - a * (p.y - p0.y) + p0.y);
-
-        return { x:x, y:y };
-    }
-
-    /**
      * @brief getEllipse calculates the center point and the start angle
      * and end angle of an ellipse from the obscure SVG parameters of an
      * elliptic arc. It returns an array with two points, the center
@@ -940,7 +916,7 @@ var bindTo = function(libName, lib) {
         var angle = function(u, v) {
             var sign = ((u.x * v.y - u.y * v.x) > 0) ? 1 : -1;
             return sign * Math.acos(
-                (u.x * v.x + u.y * v.y) / 
+                (u.x * v.x + u.y * v.y) /
                 (Math.sqrt(u.x*u.x + u.y*u.y) * Math.sqrt(u.x*u.x + u.y*u.y))
             );
         }
