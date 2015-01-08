@@ -2,7 +2,8 @@ comic.js
 =======
 
 Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
-In the latest version drawing methods return path objects native to the library you decide to use - this allows for e.g. translation and rotation of the comic shapes.
+
+Beta2: "magic" function cartoonizes SVG images & drawings. Drawing methods return path objects native to the library you decide to use - this allows for e.g. translation and rotation of the comic shapes.
 
 ![screenshot](doc/screenshot.png)
 
@@ -13,9 +14,20 @@ Examples
 [SVG.js](http://www.morvai.de/comicjs/index3.html)
 [Canvas](http://www.morvai.de/comicjs/index4.html)
 
+using "magic": 
+[on images](http://www.morvai.de/comicjs/magic1.html)
+[on drawing](http://www.morvai.de/comicjs/magic2.html)
+
 Usage
 -----
 Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper`:
+
+```
+COMIC.magic([
+                document.getElementById('img1'),
+                document.getElementById('img2')
+            ]);
+```
 
 ```
 // Raphael.js
