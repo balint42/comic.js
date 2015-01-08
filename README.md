@@ -9,26 +9,30 @@ Beta2: "magic" function cartoonizes SVG images & drawings. Drawing methods retur
 
 Examples
 --------
-[Raphael.js](http://www.morvai.de/comicjs/index1.html)
-[D3.js](http://www.morvai.de/comicjs/index2.html)
-[SVG.js](http://www.morvai.de/comicjs/index3.html)
-[Canvas](http://www.morvai.de/comicjs/index4.html)
+[Raphael.js](http://www.morvai.de/comicjs/index1.html),
+[D3.js](http://www.morvai.de/comicjs/index2.html),
+[SVG.js](http://www.morvai.de/comicjs/index3.html),
+[Canvas](http://www.morvai.de/comicjs/index4.html),
 
 using "magic": 
-[on images](http://www.morvai.de/comicjs/magic1.html)
-[on drawing](http://www.morvai.de/comicjs/magic2.html)
+[on images](http://www.morvai.de/comicjs/magic1.html),
+[on drawings](http://www.morvai.de/comicjs/magic2.html)
 
 Usage
 -----
 Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper`:
 
+The "magic" function universally goes:
 ```
-COMIC.magic([
-                document.getElementById('img1'),
-                document.getElementById('img2')
-            ]);
+// for images
+COMIC.magic([ document.getElementById('img1'),
+              document.getElementById('img2') ]);
+// for drawings
+shapes.magic(); // where "shapes" is a drawing group created on "paper"
+                // via the lib of your choice (see examples below)
 ```
 
+Drawing depending on the lib you use:
 ```
 // Raphael.js
 paper = Raphael("paper", width, height);
