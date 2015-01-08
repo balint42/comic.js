@@ -5,7 +5,7 @@ Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), 
 
 Beta2: "magic" function cartoonizes SVG images & drawings. Drawing methods return path objects native to the library you decide to use - this allows for e.g. translation and rotation of the comic shapes.
 
-![screenshot](doc/screenshot.png)
+![screenshot](doc/mixed.png)
 
 Examples
 --------
@@ -20,7 +20,7 @@ using "magic":
 
 Usage
 -----
-Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp). Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper`:
+Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp) or just the `magic` function for images. Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper` where needed:
 
 The "magic" function universally goes:
 ```
