@@ -86,7 +86,8 @@ stuff.cEllipse(x1, y1, rh, rv, rot, start, end); // ELLIPSE at center point with
 // changing the look
 stuff.attr({
     "stroke":"#E0AE9F",
-    "stroke-width": 2
+    "stroke-width": 2,
+    "fill": "none"
 });
 ```
 Beyond this all depends on your choice of library - e.g. translation:
