@@ -523,7 +523,63 @@ var bindTo = function(libName, lib) {
         
         return this;
     }
-    
+
+    /**
+     * Smart function for digesting input given to "magic" function.
+     * It looks for valid drawing elements, svg & g, and tries to find
+     * them in SVGDocument, Node and in direct children and parent 
+     * elements.
+     *
+     * @param e Node or Element
+     * @return element
+     */
+    var unWrap = function(e) {
+        var msg = "error: no drawing element given"; // in case of error
+        found = false; // false until valid drawing object found
+        tags = ["svg", "g"] // array of valid drawing tags
+        // unwrap from e.g. SVGDocument
+        var unCD = function(e) {
+            if(e.contentDocument) e = e.contentDocument;
+            return e;
+        }
+        // look in the "node"
+        var unNode = function(e) {
+            if(typeof e.node == "object") {
+                if(typeof e.node.tagName == "string")
+                    e = e.node;
+            }
+            return e;
+        }
+        var checkTag = function(e) {
+            return (typeof e.tagName != "string") ?
+                    false : tags.indexOf(e.tagName) >= 0;
+        }
+        e = unCD(e);
+        e = unNode(e);
+        // looking for an element, not any node, thus with "tagName"
+        if(! (found = checkTag(e)) ) {
+            // look in direct "child" elements
+            if(typeof e.children == "object") {
+                var i = 0;
+                while(!found && i < e.children.length) {
+                    eTmp = unCD(e.children[i]);
+                    eTmp = unNode(e.children[i]);
+                    if(found = checkTag(eTmp)) e = eTmp;
+                    i++;
+                }
+            }
+            // look in direct "parent" element if not yet found
+            if(typeof e.parent == "object" && !found) {
+                eTmp = unCD(e.children[i]);
+                eTmp = unNode(e.children[i]);
+                if(found = checkTag(eTmp)) e = eTmp;
+            }
+        }
+        if(!found) throw msg;
+        
+        return e;
+    }
+
     /**
      * Wrapper calling C.magic with the object called on.
      *
@@ -532,6 +588,7 @@ var bindTo = function(libName, lib) {
     lib.magic = function() {
         return C.magic(this);
     }
+    
     /**
      * Function to cartoonize any given svg.
      *
@@ -540,31 +597,11 @@ var bindTo = function(libName, lib) {
      */
     C.magic = function(svgs) {
         svgs = isArray(svgs) ? svgs : [svgs];
-        var unwrap = function(e) {
-            // unwrap from document & SVGDocument if needed
-            if(e.contentDocument) e = e.contentDocument;
-            if(! e.tagName) {
-                var msg = "error: non svg element given";
-                if(typeof e.children == "object") {
-                    if(! e.children[0]) throw msg;
-                    e = e.children[0];
-                }
-                else if(typeof e.parent == "object") {
-                    if(! e.parent.node) throw msg;
-                    e = e.parent.node;
-                }
-                else throw msg;
-                if(! e.tagName) throw msg;
-                if(e.tagName != "svg") throw msg;
-            }
-            else if(e.tagName != "svg") throw msg;
-            return e;
-        };
         // rerun for list[i>0]; wont happen in reruns since then svgList.length = 1
         for(var i = 1; i < svgs.length; i++) {
-            C.magic(unwrap(svgs[i]));
+            C.magic(unWrap(svgs[i]));
         }
-        svg = unwrap(svgs[0]);
+        svg = unWrap(svgs[0]);
         
         // do depth-frist tree traversal & skip branches at unknown tags
         (function walk(e) {
