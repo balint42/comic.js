@@ -65,9 +65,13 @@ var path = function() {};
  */
 var pathStr = "";
 /**
- * @var float decimal precision to which all drawing coordinates will be rounded
+ * @var int decimal precision to which all drawing coordinates will be rounded
  */
 var precision = 10;
+/**
+ * @var int factor used by local "round" function, auto calculated from precision
+ */
+var roundFactor = Math.pow(10, precision);
 /**
  * @var point current drawing point of path - needed for continuous paths
  */
@@ -1125,9 +1129,6 @@ var bindTo = function(libName, lib) {
     // HTML5 Canvas context
     if(libName == "canvas") {
         path = function(x0, y0, cx, cy, x1, y1) {
-            var p = precision;
-            x0 = round(x0, p); y0 = round(y0, p); cx = round(cx, p);
-            cy = round(cy, p); x1 = round(x1, p); y1 = round(y1, p);
             this.moveTo(x0, y0);
             this.quadraticCurveTo(cx, cy, x1, y1);
             C.pathPos = { x:x1, y:y1 };
@@ -1144,9 +1145,8 @@ var bindTo = function(libName, lib) {
     else {
         // for all svg libs let "path" & "begin" be as below
         path = function(x0, y0, cx, cy, x1, y1) {
-            var p = precision;
-            x0 = round(x0, p); y0 = round(y0, p); cx = round(cx, p);
-            cy = round(cy, p); x1 = round(x1, p); y1 = round(y1, p);
+            x0 = round(x0); y0 = round(y0); cx = round(cx);
+            cy = round(cy); x1 = round(x1); y1 = round(y1);
             // "move to" only required if (x0, y0) != current pos AND as first path cmd
             if(C.pathPos.x != x0 || C.pathPos.y != y0 || pathStr.length == 0) {
                 pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
@@ -1185,14 +1185,13 @@ var bindTo = function(libName, lib) {
 }
 
 /**
- * @brief Round to the given precision.
+ * @brief Round to the precision defined in local scope.
  *
- * @param {Int} precision
  * @param {Float} x
  * @return {Float}
  */
-function round(x, precision) {
-    return parseFloat((x).toFixed(precision));
+function round(x) {
+    return Math.round(x * roundFactor) / roundFactor;
 }
 
 /**
