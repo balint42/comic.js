@@ -57,6 +57,10 @@ var begin = function() {};
  */
 var finish = function() {};
 /**
+ * @var function code to draw comic path using specific user lib
+ */
+var path = function() {};
+/**
  * @var string path string built upon subsequent calls of "path" function
  */
 var pathStr = "";
@@ -403,8 +407,8 @@ var bindTo = function(libName, lib) {
         cLine.call(this,
                    x1, // actual end x
                    y1, // actual end y
-                   x + x + Math.cos(t1) * r,  // would be end x
-                   y + y + Math.sin(t1) * r); // would be end y
+                   x + Math.cos(t1) * r,  // would be end x
+                   y + Math.sin(t1) * r); // would be end y
         
         return this;
     }
@@ -620,7 +624,7 @@ var bindTo = function(libName, lib) {
      * @return native lib object
      */
     lib.magic = function() {
-        return C.magic(this);
+        return C.magic.call(this, this);
     }
     
     /**
@@ -633,7 +637,7 @@ var bindTo = function(libName, lib) {
         svgs = isArray(svgs) ? svgs : [svgs];
         // rerun for list[i>0]; wont happen in reruns since then svgList.length = 1
         for(var i = 1; i < svgs.length; i++) {
-            C.magic(unWrap(svgs[i]));
+            C.magic.call(this, unWrap(svgs[i]));
         }
         svg = unWrap(svgs[0]);
         
@@ -646,7 +650,7 @@ var bindTo = function(libName, lib) {
                     adj[i].walked = true;
                     if(["rect", "circle", "ellipse", "line", "polyline", "polygon",
                         "path", "g", "svg"].indexOf(adj[i].tagName) >= 0) {
-                        walk(adj[i]);
+                        walk.call(this, adj[i]);
                     }
                 }
             }
@@ -654,25 +658,25 @@ var bindTo = function(libName, lib) {
             begin(); // we are using "begin" but wont be using "finish"
             switch(e.tagName) {
                 case "rect":
-                    reRect(e);
+                    reRect.call(this, e);
                     break;
                 case "circle":
-                    reCircle(e);
+                    reCircle.call(this, e);
                     break;
                 case "ellipse":
-                    reEllipse(e);
+                    reEllipse.call(this, e);
                     break;
                 case "line":
-                    reLine(e);
+                    reLine.call(this, e);
                     break;
                 case "polyline":
-                    rePolyline(e);
+                    rePolyline.call(this, e);
                     break;
                 case "polygon":
-                    rePolygon(e);
+                    rePolygon.call(this, e);
                     break;
                 case "path":
-                    rePath(e);
+                    rePath.call(this, e);
                     break;
                 case "g":
                     // nothing to do for "g"
@@ -701,7 +705,7 @@ var bindTo = function(libName, lib) {
             if(pathStr.length > 0) {
                 p.setAttribute("d", pathStr);
             }
-        })(svg);
+        }).call(this, svg);
         
         return svg;
     }
@@ -1144,7 +1148,7 @@ var bindTo = function(libName, lib) {
             x0 = round(x0, p); y0 = round(y0, p); cx = round(cx, p);
             cy = round(cy, p); x1 = round(x1, p); y1 = round(y1, p);
             // "move to" only required if (x0, y0) != current pos AND as first path cmd
-            if(C.pathPos.x != x0 || C.pathPos.y != y0 || C.pathStr.length == 0) {
+            if(C.pathPos.x != x0 || C.pathPos.y != y0 || pathStr.length == 0) {
                 pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
             }
             else {
