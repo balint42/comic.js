@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.92 };
+COMIC = { version: 0.93 };
 
 (function() {
 /**
@@ -61,9 +61,13 @@ var finish = function() {};
  */
 var pathStr = "";
 /**
- * @var point current drawing point of path
+ * @var float decimal precision to which all drawing coordinates will be rounded
  */
-var pathPos = { x:0, y:0 };
+var precision = 10;
+/**
+ * @var point current drawing point of path - needed for continuous paths
+ */
+C.pathPos = { x:0, y:0 };
 
 /**
  * Public function to allow user defined options, also
@@ -277,9 +281,9 @@ var bindTo = function(libName, lib) {
         // number of steps
         var steps = Math.ceil(Math.pow(rh * rv, 0.25) * 3);
         // fuzzyness dependent on radius
-        var fh = C.ffc * Math.pow(rh * 3, 0.5)
+        var fh = C.ffc * Math.pow(rh * 3, 0.35)
                 * Math.sqrt((rh < 25) ? 25 / rh : 1); // boost fuzz for small ellipses
-        var fv = C.ffc * Math.pow(rv * 3, 0.5)
+        var fv = C.ffc * Math.pow(rv * 3, 0.35)
                 * Math.sqrt((rv < 25) ? 25 / rv : 1);
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
@@ -296,6 +300,14 @@ var bindTo = function(libName, lib) {
         var sinT1rys = rys * Math.sin(t1);
         var x1 = x + cosT1rxs * cosRot - sinT1rys * sinRot;
         var y1 = y + cosT1rxs * sinRot + sinT1rys * cosRot;
+
+        // correct startpoint deviation (through fuzzed radius) by drawing a line
+        cLine.call(this,
+                   x + rh * Math.cos(t1) * cosRot - rv * Math.sin(t1) * sinRot, // would be start x
+                   y + rh * Math.cos(t1) * sinRot + rv * Math.sin(t1) * cosRot, // would be start y
+                   x1,  // actual start x
+                   y1); // actual start y
+
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
@@ -308,6 +320,12 @@ var bindTo = function(libName, lib) {
 
             path.call(this, x0, y0, fuzz(x0, fh), fuzz(y0, fv), x1, y1);
         }
+        // correct endpoint deviation (through fuzzed radius) by drawing a line
+        cLine.call(this,
+                   x1, // actual end x
+                   y1, // actual end y
+                   x + rh * Math.cos(t1) * cosRot - rv * Math.sin(t1) * sinRot,  // would be end x
+                   y + rh * Math.cos(t1) * sinRot + rv * Math.sin(t1) * cosRot); // would be end y
         
         return this;
     }
@@ -359,9 +377,18 @@ var bindTo = function(libName, lib) {
         var arcLength = end - start;
         var segLength = arcLength / steps;
 
+        // initial values for i = 0
         var t1 = start; var t0, x0, y0;
-        var x1 = x + Math.cos(t1) * rxs; // initial values for i = 0
+        var x1 = x + Math.cos(t1) * rxs;
         var y1 = y + Math.sin(t1) * rys; // initial values for i = 0
+        
+        // correct startpoint deviation (through fuzzed radius) by drawing a line
+        cLine.call(this,
+                   x + Math.cos(t1) * r, // would be start x
+                   y + Math.sin(t1) * r, // would be start y
+                   x1,  // actual start x
+                   y1); // actual start y
+
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
             t0 = t1 - segLength;
@@ -372,6 +399,12 @@ var bindTo = function(libName, lib) {
 
             path.call(this, x0, y0, fuzz(x0, f), fuzz(y0, f), x1, y1);
         }
+        // correct endpoint deviation (through fuzzed radius) by drawing a line
+        cLine.call(this,
+                   x1, // actual end x
+                   y1, // actual end y
+                   x + x + Math.cos(t1) * r,  // would be end x
+                   y + y + Math.sin(t1) * r); // would be end y
         
         return this;
     }
@@ -511,6 +544,7 @@ var bindTo = function(libName, lib) {
         // draw line step by step using quadratic Bézier path
         var xt1 = handMovement(x0, x1, 0); // bezier control point
         var yt1 = handMovement(y0, y1); // bezier control point (reuse t0)
+
         for(var i = 1; i <= steps; i++) {
             t1 = i / steps;
             var xt0 = xt1; // bezier control point
@@ -520,7 +554,7 @@ var bindTo = function(libName, lib) {
             
             path.call(this, xt0, yt0, fuzz(xt0, f), fuzz(yt0, f), xt1, yt1);
         }
-        
+
         return this;
     }
 
@@ -772,6 +806,12 @@ var bindTo = function(libName, lib) {
         for(var j = 0; j < cmds.length; j++) {
             var cmd = cmds[j];
             var name = cmd.shift();
+            var moveMadeAbs = false;
+            // special W3C rule if first cmd is rel. moveTo (impossible)
+            if(j == 0 && name == "m") {
+                name = "M";
+                moveMadeAbs = true;
+            }
             // set origin either to absolute (0,0) or to relative (current pos)
             var setOrg = function() {
                 org = (name == name.toUpperCase()) ?
@@ -786,6 +826,8 @@ var bindTo = function(libName, lib) {
                     // move pos
                     pos = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
                     ipos = pos; // set initial pos to pos moved to
+                    // revert special W3C rule if in effect
+                    name = moveMadeAbs ? "m" : "M";
                     // further points are "line to"
                     while(cmd.length > 1) {
                         var p = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
@@ -843,7 +885,7 @@ var bindTo = function(libName, lib) {
                         // 2nd control point & end point
                         var p2 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
                         var p3 = { x:org.x+cmd.shift(), y:org.y+cmd.shift() };
-                        // control point is last control point reflection
+                        // 1st control point is last control point reflection
                         var p1 = (typeof cpos == "undefined") ? pos :
                                   { x:2*pos.x-cpos.x, y:2*pos.y-cpos.y };
                         cBezier3.call(this, pos.x, pos.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
@@ -857,11 +899,11 @@ var bindTo = function(libName, lib) {
                     cpos = undefined; // unset last cubic bezier control point
                     qpos = undefined; // unset last quadratic bezier control point
                     while(cmd.length > 6) {
-                        var rx = cmd.shift();  // horizontal radius
-                        var ry = cmd.shift();  // vertical radius
-                        var rot = cmd.shift(); // ellipse rotation
-                        var fa = cmd.shift();  // large arc flag
-                        var fs = cmd.shift();  // sweep flag
+                        var rx = Math.abs(cmd.shift()); // horizontal radius
+                        var ry = Math.abs(cmd.shift()); // vertical radius
+                        var rot = cmd.shift() % 360; // ellipse rotation
+                        var fa = !! cmd.shift(); // large arc flag
+                        var fs = !! cmd.shift(); // sweep flag
                         var p1 = { x:org.x+cmd.shift(), // end point
                                    y:org.y+cmd.shift() };
                         // skip if end equals start & if rx & ry are 0
@@ -879,9 +921,9 @@ var bindTo = function(libName, lib) {
                         }
                         // do normal elliptic arc if we got this far
                         var retval = getEllipse(pos, p1, rx, ry, rot, fa, fs);
-                        var cp = retval[0];
-                        var start = retval[1].x;
-                        var end = retval[1].y;
+                        var cp = retval[0];      // center point
+                        var start = retval[1].x; // start in radians
+                        var end = retval[1].y;   // end in radians
                         cEllipse.call(this, cp.x, cp.y, rx, ry, rot, start, end);
                         pos = p1;
                         setOrg();
@@ -1079,9 +1121,12 @@ var bindTo = function(libName, lib) {
     // HTML5 Canvas context
     if(libName == "canvas") {
         path = function(x0, y0, cx, cy, x1, y1) {
+            var p = precision;
+            x0 = round(x0, p); y0 = round(y0, p); cx = round(cx, p);
+            cy = round(cy, p); x1 = round(x1, p); y1 = round(y1, p);
             this.moveTo(x0, y0);
             this.quadraticCurveTo(cx, cy, x1, y1);
-            pathPos = { x:x1, y:y1 };
+            C.pathPos = { x:x1, y:y1 };
         }
         finish = function() {
             this.stroke();
@@ -1095,19 +1140,22 @@ var bindTo = function(libName, lib) {
     else {
         // for all svg libs let "path" & "begin" be as below
         path = function(x0, y0, cx, cy, x1, y1) {
+            var p = precision;
+            x0 = round(x0, p); y0 = round(y0, p); cx = round(cx, p);
+            cy = round(cy, p); x1 = round(x1, p); y1 = round(y1, p);
             // "move to" only required if (x0, y0) != current pos AND as first path cmd
-            if(pathPos.x != x0 || pathPos.y != y0 || pathStr.length == 0) {
+            if(C.pathPos.x != x0 || C.pathPos.y != y0 || C.pathStr.length == 0) {
                 pathStr = pathStr + ["M", x0, y0, "Q", cx, cy, x1, y1].join(' ');
             }
             else {
                 pathStr = pathStr + ["Q", cx, cy, x1, y1].join(' ');
             }
-            pathPos = { x:x1, y:y1 };
+            C.pathPos = { x:x1, y:y1 };
             return this;
         };
         begin = function() {
             pathStr = "";
-            pathPos = { x:0, y:0 };
+            C.pathPos = { x:0, y:0 };
             return this;
         };
     }
@@ -1130,6 +1178,17 @@ var bindTo = function(libName, lib) {
             return this.path(pathStr);
         };
     }
+}
+
+/**
+ * @brief Round to the given precision.
+ *
+ * @param {Int} precision
+ * @param {Float} x
+ * @return {Float}
+ */
+function round(x, precision) {
+    return parseFloat((x).toFixed(precision));
 }
 
 /**
