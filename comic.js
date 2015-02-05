@@ -579,6 +579,12 @@ var bindTo = function(libName, lib) {
         var msg = "error: no drawing element given"; // in case of error
         found = false; // false until valid drawing object found
         tags = ["svg", "g"] // array of valid drawing tags
+        var unArray = function(e) {
+            while(isArray(e)) {
+                e = e.shift();
+            }
+            return e;
+        }
         // unwrap from e.g. SVGDocument
         var unCD = function(e) {
             if(e.contentDocument) e = e.contentDocument;
@@ -596,6 +602,7 @@ var bindTo = function(libName, lib) {
             return (typeof e.tagName != "string") ?
                     false : tags.indexOf(e.tagName) >= 0;
         }
+        e = unArray(e);
         e = unCD(e);
         e = unNode(e);
         // looking for an element, not any node, thus with "tagName"
