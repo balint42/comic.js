@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.93 };
+COMIC = { version: 0.94 };
 
 (function() {
 /**
