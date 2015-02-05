@@ -455,6 +455,8 @@ var bindTo = function(libName, lib) {
     }
 
     /**
+     * Private version that does not call "begin" or "finish".
+     * Wrapped by "cRect" public.
      * Draw a comic style / hand drawn rectangle using line function
      *
      * @param x0 x upper left corcer
@@ -466,7 +468,7 @@ var bindTo = function(libName, lib) {
      * @return native library object
      */
     var cRect = function(x0, y0, width, height, rh, rv) {
-        begin.call(this);
+        var halfPI;
         // sanitize input
         rh = (typeof rh == "undefined") ? 0 : Math.min(rh, width/2);
         rv = (typeof rv == "undefined") ? rh : Math.min(rv, height/2);
@@ -475,18 +477,24 @@ var bindTo = function(libName, lib) {
         var y1 = y0 + height;
         
         cLine.call(this, x0+rh, y0, x1-rh, y0);
-        cLine.call(this, x1, y0+rv, x1, y1-rv);
-        cLine.call(this, x1-rh, y1, x0+rh, y1);
-        cLine.call(this, x0, y1-rv, x0, y0+rv);
         if(rh > 0) {
-            var halfPI = Math.PI / 2;
-            cEllipse.call(this, x0+rh, y0+rv, rh, rv, 0, Math.PI, halfPI*3);
+            halfPI = Math.PI / 2;
             cEllipse.call(this, x1-rh, y0+rv, rh, rv, 0, halfPI*3, Math.PI*2);
+        }
+        cLine.call(this, x1, y0+rv, x1, y1-rv);
+        if(rh > 0) {
             cEllipse.call(this, x1-rh, y1-rv, rh, rv, 0, 0, halfPI);
+        }
+        cLine.call(this, x1-rh, y1, x0+rh, y1);
+        if(rh > 0) {
             cEllipse.call(this, x0+rh, y1-rv, rh, rv, 0, halfPI, Math.PI);
         }
+        cLine.call(this, x0, y1-rv, x0, y0+rv);
+        if(rh > 0) {
+            cEllipse.call(this, x0+rh, y0+rv, rh, rv, 0, Math.PI, halfPI*3);
+        }
         
-        return finish.call(this);
+        return this;
     }
     
     /**
@@ -650,7 +658,7 @@ var bindTo = function(libName, lib) {
         for(var i = 1; i < svgs.length; i++) {
             C.magic.call(this, unWrap(svgs[i]));
         }
-        svg = unWrap(svgs[0]);
+        var svg = unWrap(svgs[0]);
         
         // do depth-frist tree traversal & skip branches at unknown tags
         (function walk(e) {
