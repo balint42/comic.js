@@ -589,7 +589,7 @@ var bindTo = function(libName, lib) {
         tags = ["svg", "g"] // array of valid drawing tags
         var unArray = function(e) {
             while(isArray(e)) {
-                e = e.shift();
+                e = e[0];
             }
             return e;
         }
