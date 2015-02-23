@@ -115,12 +115,12 @@ ctx.strokeStyle = "#FDD1BD";
 ctx.lineWidth = 3;
 ctx.globalCompositeOperation = 'destination-over';
 ```
-And the Canvas allows method chaining:
+While the drawing works exactly as above:
 ```
 // lets draw!
 stuff.cLine(x1, y1, x2, y2)
-    .cTrian(x1, y1, x2, y2, x3, y3)
-    .cRect(x1, y1, width, height);
+     .cTrian(x1, y1, x2, y2, x3, y3)
+     .cRect(x1, y1, width, height);
 ```
 
 All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. 
