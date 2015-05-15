@@ -17,6 +17,9 @@ Examples
 Cartoonized D3 examples:
 [D3 Cartoonized!](http://bl.ocks.org/balint42)
 
+Cartoon R widget built by Kent Russell using `comic.js`:
+[R Cartoonized!](http://www.buildingwidgets.com/blog/2015/5/8/week-18-comicr)
+
 [Raphael.js](http://www.morvai.de/comicjs/index1.html),
 [D3.js](http://www.morvai.de/comicjs/index2.html),
 [SVG.js](http://www.morvai.de/comicjs/index3.html),
