@@ -3,11 +3,7 @@ comic.js
 
 Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
 
-Beta4: some bugs fixed: 'cRect' draws correct, closed shapes, 'magic' doesn't overwrite global 'svg' and can be called more reliably on 'svg' via `svg.magic()`.
-
-Beta3: many bugs fixed, most importantly closed shapes now always remain closed allowing for correct filling!
-
-Beta2: "magic" function cartoonizes SVG images & drawings. Drawing methods return path objects native to the library you decide to use - this allows for e.g. translation and rotation of the comic shapes.
+Provides either methods for drawing comic style shapes (`cEllipse`, `cLine`, `cRect`, ...) or the `magic` method for cartoonizing an already existing SVG. When using the `magic` method or drawing on a `canvas` no further libraries are required.
 
 ![screenshot](doc/mixed2.png)
 ![screenshot](doc/mixed.png)
