@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.94 };
+COMIC = { version: 0.95 };
 
 (function() {
 /**
@@ -252,9 +252,9 @@ var bindTo = function(libName, lib) {
      * @param y y center
      * @param rh horizontal radius
      * @param rv vertical radius
-     * @param rot rotation in radians (< 2*PI)
-     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
-     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
+     * @param rot rotation in radians
+     * @param start start in radians for drawing an arc only (optional)
+     * @param end end in radians for drawing an arc only (optional)
      * @return native library object
      */
     lib.cEllipse = function(x, y, rh, rv, rot, start, end) {
@@ -272,17 +272,17 @@ var bindTo = function(libName, lib) {
      * @param y y center
      * @param rh horizontal radius
      * @param rv vertical radius
-     * @param rot rotation in radians (< 2*PI)
-     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
-     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
+     * @param rot rotation in radians
+     * @param start start in radians for drawing an arc only (optional)
+     * @param end end in radians for drawing an arc only (optional)
      * @return native library object
      */
     var cEllipse = function(x, y, rh, rv, rot, start, end) {
         var PI2 = Math.PI * 2;
         // sanitize input
-        start = (typeof start == "undefined") ? 0 : Math.min(PI2-0.005*PI2, start);
-        end = (typeof end == "undefined") ? PI2 : Math.min(PI2, end);
-        rot = (typeof rot == "undefined") ? 0 : Math.min(PI2, rot);
+        start = (typeof start == "undefined") ? 0 : start;
+        end = (typeof end == "undefined") ? PI2 : end;
+        rot = (typeof rot == "undefined") ? 0 : rot;
         // rotation
         var cosRot = Math.cos(rot);
         var sinRot = Math.sin(rot);
@@ -318,7 +318,6 @@ var bindTo = function(libName, lib) {
 
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
-            t0 = t1 - segLength;
             var x0 = x1;
             var y0 = y1;
             var cosT1rxs = rxs * Math.cos(t1);
@@ -363,15 +362,15 @@ var bindTo = function(libName, lib) {
      * @param x x center
      * @param y y center
      * @param r radius
-     * @param start start in radians (< 2*PI) for drawing an arc only (optional)
-     * @param end end in radians (< 2*PI) for drawing an arc only (optional)
+     * @param start start in radians for drawing an arc only (optional)
+     * @param end end in radians for drawing an arc only (optional)
      * @return native library object
      */
     var cCircle = function(x, y, r, start, end) {
         var PI2 = Math.PI * 2;
         // sanitize input
-        start = (typeof start == "undefined") ? 0 : Math.min(PI2-0.005*PI2, start);
-        end = (typeof end == "undefined") ? PI2 : Math.min(PI2, end);
+        start = (typeof start == "undefined") ? 0 : start;
+        end = (typeof end == "undefined") ? PI2 : end;
         // number of steps
         var steps = Math.ceil(Math.sqrt(r) * 3);
         // fuzzyness dependent on on radius
@@ -399,7 +398,6 @@ var bindTo = function(libName, lib) {
 
         for(var i = 1; i <= steps; i++) {
             t1 = t1 + segLength;
-            t0 = t1 - segLength;
             x0 = x1;
             y0 = y1;
             x1 = x + Math.cos(t1) * rxs;
@@ -1018,10 +1016,11 @@ var bindTo = function(libName, lib) {
     var getEllipse = function(ps, pe, rh, rv, rot, fa, fs) {
         // function for calculating angle between two vectors
         var angle = function(u, v) {
-            var sign = ((u.x * v.y - u.y * v.x) > 0) ? 1 : -1;
+            var sign = ((u.x * v.y - u.y * v.x) >= 0) ? 1 : -1;
+            if(u.x == 0 && u.y == 0) return 0;
             return sign * Math.acos(
                 (u.x * v.x + u.y * v.y) /
-                (Math.sqrt(u.x*u.x + u.y*u.y) * Math.sqrt(u.x*u.x + u.y*u.y))
+                (Math.sqrt(u.x*u.x + u.y*u.y) * Math.sqrt(v.x*v.x + v.y*v.y))
             );
         }
         // sanitize input
@@ -1029,6 +1028,7 @@ var bindTo = function(libName, lib) {
         rh = Math.abs(rh);
         rv = Math.abs(rv);
         // do calculation
+        var twoPI = 2 * Math.PI;
         var cosRot = Math.cos(rot);
         var sinRot = Math.sin(rot);
         var x = cosRot * (ps.x - pe.x) / 2 + sinRot * (ps.y - pe.y) / 2;
@@ -1045,7 +1045,7 @@ var bindTo = function(libName, lib) {
         var vt = { x:(x-xt)/rh, y:(y-yt)/rv };
         var phi1 = angle({ x:1, y:0 }, vt);
         var phiD = angle(vt, { x:(-x-xt)/rh, y:(-y-yt)/rv }) % 360;
-        var phi2 = phi1 + phiD;
+        var phi2 = phi1 + phiD + (! fs && phiD > 0 ? -twoPI : 0) + (fs && phiD < 0 ? twoPI : 0);
 
         return [{ x:cx, y:cy }, { x:phi1, y:phi2 }];
     }
