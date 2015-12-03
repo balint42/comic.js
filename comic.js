@@ -91,11 +91,11 @@ C.init = function(options) {
             C[prop] = options[prop];
         }
     }
-    
+
     if(typeof options["context"] == "object") {
         bindTo("canvas", C.context);
     }
-    
+
     return C;
 }
 
@@ -141,7 +141,7 @@ var bindTo = function(libName, lib) {
         cBezier3.call(this, x0, y0, cx0, cy0, cx1, cy1, x1, y1);
         return finish.call(this);
     }
-    
+
     /**
      * Private version that does not call "begin" or "finish".
      * Wrapped by "cBezier3" public.
@@ -164,7 +164,7 @@ var bindTo = function(libName, lib) {
         var steps = Math.ceil(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
         var f = C.ff * 0.8;
-        
+
         var p0 = [x0, y0];
         var pc0 = [cx0, cy0];
         var pc1 = [cx1, cy1];
@@ -177,13 +177,13 @@ var bindTo = function(libName, lib) {
             var curve2 = points[1];
             // set points for drawing from curve1
             p0 = curve1[0]; pc0 = curve1[1];  pc1 = curve1[2]; p1 = curve1[3];
-            
+
             path.call(this, p0[0], p0[1],
                 fuzz((pc0[0]+pc1[0])/2, f), // just make one control point
                 fuzz((pc0[1]+pc1[1])/2, f),
                 p1[0], p1[1]);
         }
-        
+
         return this;
     }
 
@@ -204,7 +204,7 @@ var bindTo = function(libName, lib) {
         cBezier2.call(this, x0, y0, cx, cy, x1, y1);
         return finish.call(this);
     }
-    
+
     /**
      * Private version that does not call "begin" or "finish".
      * Wrapped by "cBezier2" public.
@@ -225,7 +225,7 @@ var bindTo = function(libName, lib) {
         var steps = Math.ceil(Math.pow(d / C.fsteps, 0.9));
         // fuzzyness
         var f = C.ff * 0.8;
-        
+
         var p0 = [x0, y0];
         var pc = [cx, cy];
         var p1 = [x1, y1];
@@ -237,10 +237,10 @@ var bindTo = function(libName, lib) {
             var curve2 = points[1];
             // set points for drawing from curve1
             p0 = curve1[0]; pc = curve1[1]; p1 = curve1[2];
-            
+
             path.call(this, p0[0], p0[1], fuzz(pc[0], f), fuzz(pc[1], f), p1[0], p1[1]);
         }
-        
+
         return this;
     }
 
@@ -262,7 +262,7 @@ var bindTo = function(libName, lib) {
         cEllipse.call(this, x, y, rh, rv, rot, start, end);
         return finish.call(this);
     }
-    
+
     /**
      * Private version that does not call "begin" or "finish".
      * Wrapped by "cEllipse" public.
@@ -334,10 +334,10 @@ var bindTo = function(libName, lib) {
                    y1, // actual end y
                    x + rh * Math.cos(t1) * cosRot - rv * Math.sin(t1) * sinRot,  // would be end x
                    y + rh * Math.cos(t1) * sinRot + rv * Math.sin(t1) * cosRot); // would be end y
-        
+
         return this;
     }
-    
+
     /**
      * WRAPPER for real, private "cCircle"
      * Draw a comic style / hand drawn circle
@@ -354,7 +354,7 @@ var bindTo = function(libName, lib) {
         cCircle.call(this, x, y, r, start, end);
         return finish.call(this);
     }
-    
+
     /**
      * Private version that does not call "begin" or "finish".
      * Wrapped by "cCircle" public.
@@ -389,7 +389,7 @@ var bindTo = function(libName, lib) {
         var t1 = start; var t0, x0, y0;
         var x1 = x + Math.cos(t1) * rxs;
         var y1 = y + Math.sin(t1) * rys; // initial values for i = 0
-        
+
         // correct startpoint deviation (through fuzzed radius) by drawing a line
         cLine.call(this,
                    x + Math.cos(t1) * r, // would be start x
@@ -413,7 +413,7 @@ var bindTo = function(libName, lib) {
                    y1, // actual end y
                    x + Math.cos(t1) * r,  // would be end x
                    y + Math.sin(t1) * r); // would be end y
-        
+
         return this;
     }
 
@@ -435,7 +435,7 @@ var bindTo = function(libName, lib) {
         cLine.call(this, x2, y2, x0, y0);
         return finish.call(this);
     }
-    
+
     /**
      * WRAPPER for real, private "cRect"
      * Draw a comic style / hand drawn rectangle using line function
@@ -475,7 +475,7 @@ var bindTo = function(libName, lib) {
         // calculate lower left corner
         var x1 = x0 + width;
         var y1 = y0 + height;
-        
+
         cLine.call(this, x0+rh, y0, x1-rh, y0);
         if(rh > 0) {
             halfPI = Math.PI / 2;
@@ -493,10 +493,10 @@ var bindTo = function(libName, lib) {
         if(rh > 0) {
             cEllipse.call(this, x0+rh, y0+rv, rh, rv, 0, Math.PI, halfPI*3);
         }
-        
+
         return this;
     }
-    
+
     /**
      * WRAPPER for real, private "cLine"
      * Draw a comic style / hand drawn line
@@ -545,10 +545,10 @@ var bindTo = function(libName, lib) {
                       6 * pow5 -
                       10 * pow3);
             }
-            
+
             return x0 + (x0 - x1) * ft;
         }
-        
+
         // calculate number of steps
         var d = dist2(x0, y0, x1, y1);
         var steps = Math.ceil(d / C.fsteps);
@@ -567,7 +567,7 @@ var bindTo = function(libName, lib) {
             var yt0 = yt1; // bezier control point
             var xt1 = handMovement(x0, x1, t1); // bezier end point
             var yt1 = handMovement(y0, y1); // bezier end point (reuse t1)
-            
+
             path.call(this, xt0, yt0, fuzz(xt0, f), fuzz(yt0, f), xt1, yt1);
         }
 
@@ -577,7 +577,7 @@ var bindTo = function(libName, lib) {
     /**
      * Smart function for digesting input given to "magic" function.
      * It looks for valid drawing elements, svg & g, and tries to find
-     * them in SVGDocument, Node and in direct children and parent 
+     * them in SVGDocument, Node and in direct children and parent
      * elements.
      *
      * @param e Node or Element
@@ -588,7 +588,8 @@ var bindTo = function(libName, lib) {
         found = false; // false until valid drawing object found
         tags = ["svg", "g"] // array of valid drawing tags
         var unArray = function(e) {
-            while(isArray(e)) {
+            // "string" of course is nonsense but would cause infinite loop
+            while(e[0] && typeof e[0] != "string") {
                 e = e[0];
             }
             return e;
@@ -633,7 +634,7 @@ var bindTo = function(libName, lib) {
             }
         }
         if(!found) throw msg;
-        
+
         return e;
     }
 
@@ -645,7 +646,7 @@ var bindTo = function(libName, lib) {
     lib.magic = function() {
         return C.magic.call(this, this);
     }
-    
+
     /**
      * Function to cartoonize any given svg.
      *
@@ -653,13 +654,14 @@ var bindTo = function(libName, lib) {
      * @return native lib object
      */
     C.magic = function(svgs) {
-        svgs = isArray(svgs) ? svgs : [svgs];
+        if(! svgs) return;
+        svgs = svgs[0] ? svgs : [svgs];
         // rerun for list[i>0]; wont happen in reruns since then svgList.length = 1
         for(var i = 1; i < svgs.length; i++) {
             C.magic.call(this, unWrap(svgs[i]));
         }
         var svg = unWrap(svgs[0]);
-        
+
         // do depth-frist tree traversal & skip branches at unknown tags
         (function walk(e) {
             // recursion if known, unvisited tag - skip branch otherwise
@@ -725,7 +727,7 @@ var bindTo = function(libName, lib) {
                 p.setAttribute("d", pathStr);
             }
         }).call(this, svg);
-        
+
         return svg;
     }
 
@@ -748,7 +750,7 @@ var bindTo = function(libName, lib) {
                    g(e.width), g(e.height),
                    g(e.rx), g(e.ry));
     }
-    
+
     /**
      * Function to redraw an svg circle in cartoon style.
      *
@@ -758,7 +760,7 @@ var bindTo = function(libName, lib) {
     var reCircle = function(e) {
         cCircle.call(this, g(e.cx), g(e.cy), g(e.r));
     }
-    
+
     /**
      * Function to redraw an svg ellipse in cartoon style.
      *
@@ -768,7 +770,7 @@ var bindTo = function(libName, lib) {
     var reEllipse = function(e) {
         cEllipse.call(this, g(e.cx), g(e.cy), g(e.rx), g(e.ry));
     }
-    
+
     /**
      * Function to redraw an svg line in cartoon style.
      *
@@ -778,7 +780,7 @@ var bindTo = function(libName, lib) {
     var reLine = function(e) {
         cLine.call(this, g(e.x1), g(e.y1), g(e.x2), g(e.y2));
     }
-    
+
     /**
      * Function to redraw an svg polyline in cartoon style.
      *
@@ -794,7 +796,7 @@ var bindTo = function(libName, lib) {
             p1 = p2;
         }
     }
-    
+
     /**
      * Function to redraw an svg polygon in cartoon style.
      *
@@ -812,7 +814,7 @@ var bindTo = function(libName, lib) {
         p1 = points.getItem(0);
         cLine.call(this, p2.x, p2.y, p1.x, p1.y);
     }
-    
+
     /**
      * Function to redraw an svg path in cartoon style.
      *
@@ -1003,7 +1005,7 @@ var bindTo = function(libName, lib) {
      * and end angle of an ellipse from the obscure SVG parameters of an
      * elliptic arc. It returns an array with two points, the center
      * point and a point with the start and end angles.
-     * 
+     *
      * @param ps starting point
      * @param pe end point
      * @param rh horizontal radius
@@ -1047,7 +1049,7 @@ var bindTo = function(libName, lib) {
 
         return [{ x:cx, y:cy }, { x:phi1, y:phi2 }];
     }
-    
+
     /**
      * @brief De Casteljau's algorithm splitting n-th degree Bezier curve
      *
@@ -1066,7 +1068,7 @@ var bindTo = function(libName, lib) {
         var res1 = [];    // first curve resulting control points
         var res2 = [];    // second curve resulting control points
         var t1 = 1 - t0;
-            
+
         // multiply point with scalar factor
         var pf = function(p, f) {
             var res = [];
@@ -1083,7 +1085,7 @@ var bindTo = function(libName, lib) {
             }
             return res;
         };
-            
+
         // set original coefficients: b[i][0] = points[i]
         for(var i = 0; i <= n; i++) {
             points[i] = (typeof points[i] == "object") ? points[i] : [points[i]];
@@ -1103,10 +1105,10 @@ var bindTo = function(libName, lib) {
             res1.push(b[0][j]);
             res2.push(b[j][n-j]);
         }
-            
+
         return [res1, res2];
     };
-    
+
     /**
      * Shift given value randomly by fuzzyness factor f
      * @param val value to shift randomly
@@ -1116,7 +1118,7 @@ var bindTo = function(libName, lib) {
     var fuzz = function(val, f) {
         return val + f * (Math.random() - 0.5);
     }
-    
+
     /**
      * Distance between 2 numbers in 2 dim space
      * @param x0 1st point x
@@ -1130,7 +1132,7 @@ var bindTo = function(libName, lib) {
         var dy = y1 - y0;
         return Math.sqrt(dx * dx + dy * dy);
     }
-    
+
     /**
      * Test whether the given variable is an array.
      * @param a var to test
@@ -1139,7 +1141,7 @@ var bindTo = function(libName, lib) {
     var isArray = function(a) {
         return Object.prototype.toString.call(a) === '[object Array]';
     }
-    
+
     // ----------------------set drawing method-------------------------
     // HTML5 Canvas context
     if(libName == "canvas") {
