@@ -21,7 +21,7 @@
  * @license http://en.wikipedia.org/wiki/MIT_License MIT License
  */
 // global object
-COMIC = { version: 0.95 };
+COMIC = { version: 0.96 };
 
 (function() {
 /**
@@ -35,7 +35,7 @@ var fsteps = 50;
 /**
  * @var int min number of steps
  */
-var msteps = 4;
+var msteps = 3;
 /**
  * @var float fuzzyness factor
  */
@@ -43,7 +43,11 @@ var ff = 8.0;
 /**
  * @var float fuzzyness factor for circle & ellipse
  */
-var ffc = ff / 20;
+var ffc = 8.0;
+/**
+ * @var float drunk style fuzzyness - everything has stronger curvature
+ */
+var drunk = false;
 /**
  * @var object 2d canvas context (if any)
  */
@@ -287,12 +291,10 @@ var bindTo = function(libName, lib) {
         var cosRot = Math.cos(rot);
         var sinRot = Math.sin(rot);
         // number of steps
-        var steps = Math.ceil(Math.pow(rh * rv, 0.25) * 3);
-        // fuzzyness dependent on radius
-        var fh = C.ffc * Math.pow(rh * 3, 0.35)
-                * Math.sqrt((rh < 25) ? 25 / rh : 1); // boost fuzz for small ellipses
-        var fv = C.ffc * Math.pow(rv * 3, 0.35)
-                * Math.sqrt((rv < 25) ? 25 / rv : 1);
+        var steps = C.msteps + ((rh + rv) / 2) * C.fsteps / 200;
+        // fuzzyness dependent on on radius
+        var fh = C.ffc * Math.pow(rh, 0.5) * 0.3 / Math.pow(steps, 0.25);
+        var fv = C.ffc * Math.pow(rv, 0.5) * 0.3 / Math.pow(steps, 0.25);
         // distortion of the ellipse
         var xs = 0.95 + Math.random() * 0.1;
         var ys = 0.95 + Math.random() * 0.1;
@@ -325,7 +327,7 @@ var bindTo = function(libName, lib) {
             var x1 = x + cosT1rxs * cosRot - sinT1rys * sinRot;
             var y1 = y + cosT1rxs * sinRot + sinT1rys * cosRot;
 
-            path.call(this, x0, y0, fuzz(x0, fh), fuzz(y0, fv), x1, y1);
+            path.call(this, x0, y0, fuzz((x0 + x1) / 2, fh), fuzz((y0 + y1) / 2, fv), x1, y1);
         }
         // correct endpoint deviation (through fuzzed radius) by drawing a line
         cLine.call(this,
@@ -372,12 +374,11 @@ var bindTo = function(libName, lib) {
         start = (typeof start == "undefined") ? 0 : start;
         end = (typeof end == "undefined") ? PI2 : end;
         // number of steps
-        var steps = Math.ceil(Math.sqrt(r) * 3);
+        var steps = C.msteps + r * C.fsteps / 200;
         // fuzzyness dependent on on radius
-        var f = C.ffc * Math.pow(steps, 0.75)
-                * Math.sqrt((r < 25) ? 25 / r : 1); // boost fuzz for small circles
+        var f = C.ffc * Math.pow(r, 0.5) * 0.3 / Math.pow(steps, 0.25);
         // distortion of the circle
-        var xs = 0.95 + Math.random() * 0.1;
+        var xs = 0.975 + Math.random() * 0.05;
         var rxs = r * xs;
         var rys = r * (2.0 - xs);
         // lenght of one segment
@@ -403,7 +404,7 @@ var bindTo = function(libName, lib) {
             x1 = x + Math.cos(t1) * rxs;
             y1 = y + Math.sin(t1) * rys;
 
-            path.call(this, x0, y0, fuzz(x0, f), fuzz(y0, f), x1, y1);
+            path.call(this, x0, y0, fuzz((x0 + x1) / 2, f), fuzz((y0 + y1) / 2, f), x1, y1);
         }
         // correct endpoint deviation (through fuzzed radius) by drawing a line
         cLine.call(this,
@@ -566,7 +567,7 @@ var bindTo = function(libName, lib) {
             var xt1 = handMovement(x0, x1, t1); // bezier end point
             var yt1 = handMovement(y0, y1); // bezier end point (reuse t1)
 
-            path.call(this, xt0, yt0, fuzz(xt0, f), fuzz(yt0, f), xt1, yt1);
+            path.call(this, xt0, yt0, fuzz((xt0 + xt1) / 2, f), fuzz((yt0 + yt1) / 2, f), xt1, yt1);
         }
 
         return this;
@@ -1110,14 +1111,42 @@ var bindTo = function(libName, lib) {
     };
 
     /**
-     * Shift given value randomly by fuzzyness factor f
+     * Shift given value randomly +/- by fuzzyness factor f / 2
+     * NOTE: not _really_ randomly but with alternating signs.
+     * Two times > 0, two times < 0, two times > 0, ... !
+     * NOTE: This relies on being called an even number of times
+     * from every context! (Which makes sense in a 2D space)
      * @param val value to shift randomly
      * @param f fuzzyness factor
      * @return number
      */
-    var fuzz = function(val, f) {
+    var fuzzDrunk = function(val, f) {
+        if(++fuzzDrunk.count > 2) {
+            fuzzDrunk.count = 0;
+            fuzzDrunk.sign *= -1;
+        }
+        return val + f * (Math.random() / 2 + fuzzDrunk.sign * 0.5);
+    }
+    fuzzDrunk.count = 0;
+    fuzzDrunk.sign = +(new Date()) % 2 ? 1 : -1; // random first sign
+
+    /**
+     * Shift given value randomly +/- by fuzzyness factor f / 2
+     * @param val value to shift randomly
+     * @param f fuzzyness factor
+     * @return number
+     */
+    var fuzzNormal = function(val, f) {
         return val + f * (Math.random() - 0.5);
     }
+
+    /**
+     * Shift given value randomly +/- by fuzzyness factor f / 2
+     * @param val value to shift randomly
+     * @param f fuzzyness factor
+     * @return number
+     */
+    var fuzz = C.drunk ? fuzzDrunk : fuzzNormal;
 
     /**
      * Distance between 2 numbers in 2 dim space
@@ -1281,6 +1310,7 @@ C.init({
     msteps: msteps,
     ff: ff,
     ffc: ffc,
+    drunk: drunk,
     context: context
 });
 
