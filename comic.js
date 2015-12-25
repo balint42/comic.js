@@ -31,7 +31,7 @@ var C = COMIC;
 /**
  * @var int length of one step - each step means new "hand jitter"
  */
-var fsteps = 50;
+var fsteps = 5;
 /**
  * @var int min number of steps
  */
@@ -93,6 +93,9 @@ C.init = function(options) {
     for(var prop in options) {
         if(options.hasOwnProperty(prop)) {
             C[prop] = options[prop];
+            // hard coded fudge
+            if(prop == 'fsteps')
+                C.fsteps *= 10;
         }
     }
 
