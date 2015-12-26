@@ -93,12 +93,13 @@ C.init = function(options) {
     for(var prop in options) {
         if(options.hasOwnProperty(prop)) {
             C[prop] = options[prop];
-            // hard coded fudge
+            // hard coded fudge factor
             if(prop == 'fsteps')
                 C.fsteps *= 10;
         }
     }
 
+    // if new canvas context call bind to
     if(typeof options["context"] == "object") {
         bindTo("canvas", C.context);
     }
@@ -1149,7 +1150,9 @@ var bindTo = function(libName, lib) {
      * @param f fuzzyness factor
      * @return number
      */
-    var fuzz = C.drunk ? fuzzDrunk : fuzzNormal;
+    var fuzz = function(val, f) {
+        return C.drunk ? fuzzDrunk(val, f) : fuzzNormal(val, f);
+    }
 
     /**
      * Distance between 2 numbers in 2 dim space
@@ -1232,6 +1235,7 @@ var bindTo = function(libName, lib) {
         };
     }
 }
+C.bindTo = bindTo;
 
 /**
  * @brief Round to the precision defined in local scope.
