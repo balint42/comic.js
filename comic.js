@@ -43,7 +43,7 @@ var ff = 8.0;
 /**
  * @var float fuzzyness factor for circle & ellipse
  */
-var ffc = 8.0;
+var ffc = 5.0;
 /**
  * @var float drunk style fuzzyness - everything has stronger curvature
  */
@@ -337,8 +337,8 @@ var bindTo = function(libName, lib) {
         cLine.call(this,
                    x1, // actual end x
                    y1, // actual end y
-                   x + rh * Math.cos(t1) * cosRot - rv * Math.sin(t1) * sinRot,  // would be end x
-                   y + rh * Math.cos(t1) * sinRot + rv * Math.sin(t1) * cosRot); // would be end y
+                   x + rh * Math.cos(end) * cosRot - rv * Math.sin(end) * sinRot,  // would be end x
+                   y + rh * Math.cos(end) * sinRot + rv * Math.sin(end) * cosRot); // would be end y
 
         return this;
     }
@@ -414,8 +414,8 @@ var bindTo = function(libName, lib) {
         cLine.call(this,
                    x1, // actual end x
                    y1, // actual end y
-                   x + Math.cos(t1) * r,  // would be end x
-                   y + Math.sin(t1) * r); // would be end y
+                   x + Math.cos(end) * r,  // would be end x
+                   y + Math.sin(end) * r); // would be end y
 
         return this;
     }
@@ -1125,6 +1125,7 @@ var bindTo = function(libName, lib) {
      * @return number
      */
     var fuzzDrunk = function(val, f) {
+        // get random sign
         if(++fuzzDrunk.count > 2) {
             fuzzDrunk.count = 0;
             fuzzDrunk.sign *= -1;
@@ -1136,13 +1137,27 @@ var bindTo = function(libName, lib) {
 
     /**
      * Shift given value randomly +/- by fuzzyness factor f / 2
+     * NOTE: not _really_ randomly, but with every 2nd call
+     * having a strong variation relative to the prior call.
      * @param val value to shift randomly
      * @param f fuzzyness factor
      * @return number
      */
     var fuzzNormal = function(val, f) {
-        return val + f * (Math.random() - 0.5);
+        // get random number
+        var i = fuzzNormal.count;
+        var rnd = (Math.random() - 0.5);
+
+        if(++fuzzNormal.count == 2)
+            fuzzNormal.count = 0;
+
+        var res = val + f * (rnd - fuzzNormal.rnds[i]);
+        fuzzNormal.rnds[i] = rnd;
+
+        return res;
     }
+    fuzzNormal.count = 0;
+    fuzzNormal.rnds = [0, 0];
 
     /**
      * Shift given value randomly +/- by fuzzyness factor f / 2
@@ -1261,7 +1276,12 @@ function round(x) {
  * @return {Array}
  */
 function parsePath(path) {
-    var list = path.pathSegList;
+    // some browser bugs can make pathSegList go missing - a workaround
+    if(! path.pathSegList) {
+        var newPath = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+        newPath.setAttribute('d', path.getAttribute('d'));
+    }
+    var list = path.pathSegList || newPath.pathSegList;
     var res = [];
     for(var i = 0; i < list.length; i++) {
         var cmd = list[i].pathSegTypeAsLetter;
