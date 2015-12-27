@@ -1040,7 +1040,7 @@ var bindTo = function(libName, lib) {
         var y = -1 * sinRot * (ps.x - pe.x) / 2 + cosRot * (ps.y - pe.y) / 2;
         var rh2 = rh * rh; var rv2 = rv * rv; var x2 = x * x; var y2 = y * y;
         var fr = ((fa == fs) ? -1 : 1) * Math.sqrt(
-                    (rh2 * (rv2 - y2) - rv2 * x2) /
+                    Math.abs(rh2 * (rv2 - y2) - rv2 * x2) /
                     (rh2 * y2 + rv2 * x2)
                  );
         var xt = fr * rh * y / rv;
