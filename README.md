@@ -70,9 +70,9 @@ and then for the SVG libs (SVG.js, D3.js, Raphael.js):
 // these are the default values if you do not call "init"
 COMIC.init({
     ff: 8,      // fuzz factor for line drawing: bigger -> fuzzier
-    ffc: 0.4,   // fuzz factor for curve drawing: bigger -> fuzzier
-    fsteps: 50, // number of pixels per step: smaller -> fuzzier
-    msteps: 4,  // min number of steps: bigger -> fuzzier
+    ffc: 5,   // fuzz factor for curve drawing: bigger -> fuzzier
+    fsteps: 5, // number of pixels per step: smaller -> fuzzier
+    msteps: 3,  // min number of steps: bigger -> fuzzier
 });
 // lets draw!
 stuff.cLine(x1, y1, x2, y2);         // LINE from starting point to end point
