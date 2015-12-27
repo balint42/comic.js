@@ -68,6 +68,7 @@ COMIC.ctx(ctx);
 and then for the SVG libs (SVG.js, D3.js, Raphael.js):
 ```
 // these are the default values if you do not call "init"
+// NOTE: values have changed with beta5
 COMIC.init({
     ff: 8,      // fuzz factor for line drawing: bigger -> fuzzier
     ffc: 5,   // fuzz factor for curve drawing: bigger -> fuzzier
