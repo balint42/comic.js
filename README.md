@@ -16,10 +16,7 @@ Cartoonized D3 examples:
 Cartoon R widget built by Kent Russell using `comic.js`:
 [R Cartoonized!](http://www.buildingwidgets.com/blog/2015/5/8/week-18-comicr)
 
-[Raphael.js](http://www.morvai.de/comicjs/index1.html),
-[D3.js](http://www.morvai.de/comicjs/index2.html),
-[SVG.js](http://www.morvai.de/comicjs/index3.html),
-[Canvas](http://www.morvai.de/comicjs/index4.html),
+using raphael.js, d3.js, svg.js and canvas: [comic.js lab](http://www.morvai.de/comicjs/mixer.html)
 
 using "magic": 
 [on images](http://www.morvai.de/comicjs/magic1.html),
@@ -71,8 +68,8 @@ and then for the SVG libs (SVG.js, D3.js, Raphael.js):
 // NOTE: values have changed with beta5
 COMIC.init({
     ff: 8,      // fuzz factor for line drawing: bigger -> fuzzier
-    ffc: 5,   // fuzz factor for curve drawing: bigger -> fuzzier
-    fsteps: 5, // number of pixels per step: smaller -> fuzzier
+    ffc: 5,     // fuzz factor for curve drawing: bigger -> fuzzier
+    fsteps: 5,  // number of pixels per step: smaller -> fuzzier
     msteps: 3,  // min number of steps: bigger -> fuzzier
 });
 // lets draw!
