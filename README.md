@@ -1,7 +1,7 @@
 comic.js
 =======
 
-Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing.
+Javascript library that acts as plugin for [Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/) or as lib for the [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp), providing functions for cartoon style drawing. Try it in the [comic.js lab](http://www.morvai.de/comicjs/mixer.html).
 
 Provides either methods for drawing comic style shapes (`cEllipse`, `cLine`, `cRect`, ...) or the `magic` method for cartoonizing an already existing SVG. When using the `magic` method or drawing on a `canvas` no further libraries are required.
 
