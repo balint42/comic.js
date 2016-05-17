@@ -1282,6 +1282,7 @@ function parsePath(path) {
         newPath.setAttribute('d', path.getAttribute('d'));
     }
     var list = path.pathSegList || newPath.pathSegList;
+    if(! list.length) list = list._list;
     var res = [];
     for(var i = 0; i < list.length; i++) {
         var cmd = list[i].pathSegTypeAsLetter;
