@@ -22,6 +22,11 @@ using "magic":
 [on images](http://www.morvai.de/comicjs/magic1.html),
 [on drawings](http://www.morvai.de/comicjs/magic2.html)
 
+NOTE
+----
+Chrome versions > 48.x need a polyfill for the missing `pathSegList` API to make the `magic` method of `comic.js` work. This means you have to get `pathseg.js` [here](https://github.com/progers/pathseg) and include it in your site via `<script type="text/javascript" src="pathseg.js"></script>`.
+
+
 Usage
 -----
 Simply include `comic.min.js` _after_ including one of the supported libraries ([Raphael.js](http://raphaeljs.com/), [D3.js](http://d3js.org/), [SVG.js](http://svgjs.com/)) - or none of them if you are using a [HTML5 Canvas](http://www.w3schools.com/html/html5_canvas.asp) or just the `magic` function for images. Then it can be used as follows, assuming that you have a container `div` or `canvas` with id `paper` where needed:
