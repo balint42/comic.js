@@ -18,7 +18,7 @@ Cartoon R widget built by Kent Russell using `comic.js`:
 
 using raphael.js, d3.js, svg.js and canvas: [comic.js lab](http://www.morvai.de/comicjs/mixer.html)
 
-using "magic": 
+using "magic":
 [on images](http://www.morvai.de/comicjs/magic1.html),
 [on drawings](http://www.morvai.de/comicjs/magic2.html)
 
@@ -125,7 +125,16 @@ stuff.cLine(x1, y1, x2, y2)
      .cRect(x1, y1, width, height);
 ```
 
-All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any. 
+All further things should work the default way of your chosen library. I have done little experiments though and errors are probable - please let me know if you encounter any.
+
+Release
+-------
+
+To release a new version on npm:
+
+- Update version number in `package.json`
+- Test and push the latest `master` branch to Github
+- Run `npm publish` to publish to https://www.npmjs/package/comic.js
 
 Credits
 -------
