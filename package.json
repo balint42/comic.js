@@ -1,0 +1,29 @@
+{
+  "name": "comic.js",
+  "version": "0.96.0",
+  "description": "Comic style version of common drawing functions",
+  "main": "comic.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "build": "uglifyjs --compress --mangle -o comic.min.js comic.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gramener/comic.js.git"
+  },
+  "keywords": [
+    "comic",
+    "drawing"
+  ],
+  "author": "Balint Morvai <balint@morvai.de>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gramener/comic.js/issues"
+  },
+  "homepage": "https://github.com/gramener/comic.js#readme",
+  "devDependencies": {
+    "uglify-js": "^3.5.3"
+  }
+}
